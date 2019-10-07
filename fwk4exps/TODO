@@ -1,0 +1,84 @@
+☐ Salida de cada Ej. numero de ejecuciones del framework, likelihood, print(estrategia)
+☐ Shuffle de instancias
+☐ Hacer memes de programacion.
+☐ Numero total de instancias = numero de lineas de archivo de instancias.
+☐ Sampleo de parametros
+    ☐ Guardar lista de estrategias que se han corrido durante iteracion
+    
+    ☐ samplear parametros de aquellas en la lista antes de hacer el update
+
+que esta haciendo ahora el framework:
+    lee el archivo de instancias
+    retrieve node  
+    diseño experimental
+    estrategias unicas
+    traceback info
+    diccionario de nodos
+    nodos unicos
+    comparar estrategias y correr minimo
+    corre en paralelo
+    guarda diccionario de resultados en estrategia
+    
+☐ Clave del nodo hoja igual al estado final de programa
+    ☐ falta agregar que estrategia gano en ultima comparacion.
+✔ f4e.terminate() --> para obtener estado de nodo hoja @done(19-09-06 08:30)
+✔ Tree descent obtiene outcome (nodo hoja) más probable @done(19-09-06 08:51)
+✔ almacenar 2 outcomes: @done(19-09-06 09:05)
+    ✔ max likehood: nodo hoja con más simulaciones @done(19-09-06 09:05)
+    ✔ tree descent outcome: nodo hoja  especulado por el tree descent @done(19-09-06 09:06)
+✔ Selección de estrategia maximizando volatilidad según likelihood de outcome preferido por el usuario (parámetro) @done(19-09-06 08:30)
+✔ Archivo de salida: Framework escribe un archivo de salida "global" indicando por cada iteración: número de ejecuciones del algoritmo de base, likelihood del outcome más probable y el tree descent outcome, estrategia que maximiza volatilidad @done(19-09-06 09:13)
+
+
+✔ Política única: Tree Descent Outcome: tree_descent guarda el nodo hoja con el que se calculara la amplitud de las estrategias a seleccionar @done(19-09-13 00:50)
+✔ Volatilidad sólo para estrategias en tree_descent. Si todas completas, termina. Volatilidad de estrategia terminada = 0 @done(19-09-13 00:52)
+✔ seleccionar instancia @done(19-09-13 09:04)
+✔ Execute en cada iteración, la estrategia más volátil para n_proc instancias. (en el tree descent ya se está ejecutando). @done(19-09-13 09:04)
+✔ partial_compare para calcular los promedios sólo toma en cuenta instancias que han sido ejecutadas en ambas estrategias @done(19-09-13 09:07)
+☐ Archivo con vector de evaluaciones para estrategias (save & load)
+    ☐ id (ejecutable, instancias, parámetros y argumentos)
+    ☐ evaluaciones.txt
+
+
+
+☐ Lista de comandos anytime:
+    ☐ show_results (ejecuta el experimento con el outcome másprobable)
+    ☐ save & exit (almacena estrategias en directorio y vector de evaluaciones parcial, además se guarda shuffle de instancias)
+    ☐ load (se carga directorio)
+    ☐ run 
+
+
+☐ results_timestamp.txt (likelihood vs iteración)
+☐ Estrategias (globales)
+    ☐ id (ejecutable, instancias, parámetros y argumentos)
+    ☐ evaluaciones.txt
+
+Archivo de diccionario de estrategias:
+    Nombre: 
+        ✔ strategy_dict.txt @done(19-09-26 23:42)
+    Contenido:
+        ✔ tupla identificador estrategia, hash_estrategia.txt @done(19-09-27 00:42)
+
+
+Ejemplo de archivo de evaluacion de estrategia:
+    Nombre: 
+        ✔ hash_strategia.txt @done(19-09-27 00:42)
+    Contenido: 
+    ✔ par instancia, resultado, no en orden @done(19-09-27 00:42)
+
+Cuando se carga resultados de estrategia?:
+    luego de crear estrategia:
+        ✔ revisar si existe archivo que tenga como nombre el hash de esta estrategia @done(19-09-27 00:42)
+        ✔ si existe: @done(19-09-27 00:42)
+            ✔ cargar resultados en esta estrategia @done(19-09-27 00:42)
+        ✔ si no existe: @done(19-09-27 00:43)
+            ✔ crear archivo que tenga como nombre el hash de esta estrategia @done(19-09-27 00:43)
+            ✔ agregar tupla y hash de estrategia actual en diccionario global de estrategias @done(19-09-27 00:43)
+Cuando se agregan lineas en archivo de resultados de estrategia?:
+    ☐ cada vez que se agrega un resultado al diccionario de resultados de la estrategia, se añade al final del archivo.
+
+################################################################################################
+Suffle de instancias:
+    ☐ 
+    ☐ 
+    ☐ 
