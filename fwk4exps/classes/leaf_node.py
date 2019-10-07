@@ -8,7 +8,7 @@ class LeafNode(object):
         print("sale del init")
 
     def __str__(self):
-        return self.msg
+        return str(self.msg)
 
     def add_simulation(self):
         self.simulations = self.simulations + 1

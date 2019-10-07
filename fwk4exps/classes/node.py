@@ -22,12 +22,18 @@ class Node(object):
         print("#####start_compare_strategies")
         if self.alg1.no_results():
             self.alg1.run_minimum(pifile, instances, cpu_count)
+            print("self.alg1.results:",self.alg1.results)
         if self.alg2.no_results():
             self.alg2.run_minimum(pifile, instances, cpu_count)
-        arr1, arr2 = []
+            print("self.alg2.results:",self.alg2.results)
+        arr1 = []
+        arr2 = []
+        print("self.alg1.results.keys()",self.alg1.results.keys())
+        print("self.alg2.results.keys()",self.alg2.results.keys())
         for k in self.alg1.results.keys() & self.alg2.results.keys():
-            arr1.push(self.alg1.results[k])
-            arr2.push(self.alg2.results[k])
+            print("common key:", k)
+            arr1.append(self.alg1.results[k])
+            arr2.append(self.alg2.results[k])
 
         if statistics.mean(arr1) > statistics.mean(arr2):
             print("#####end_compare_strategies")

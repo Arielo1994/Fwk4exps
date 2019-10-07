@@ -10,6 +10,7 @@ import os.path
 
 class Strategy(object):
     strategy_instance_dict = dict()
+    permutation_folder = None
 
     def __new__(cls, *args, **kwargs):
         print("__new__ method")
@@ -100,33 +101,7 @@ class Strategy(object):
 
     def selectInstance(self):
         self.lastInstanceIndex = self.lastInstanceIndex + 1
-        return self.lastInstanceIndex = self.lastInstanceIndex + 1
-
-    
-    # def selectInstance(self):
-    #     # retorna el indice de instancia que no ha sido ejecutado:
-    #     self.lastInstanceIndex = self.lastInstanceIndex + 1
-    #     # print( "lastInstanceIndex: " + str(self.lastInstanceIndex))
-    #     if self.lastInstanceIndex >= len(self.range):
-    #         # print("se paso del rango wey")
-    #         return None
-    #     print("resultados hasta ahora:")
-    #     print(self.results)
-    #     i = self.range[self.lastInstanceIndex]
-    #     print("indice a retornar: "+str(i))
-    #     # flag = self.results.get(i)
-    #     print("existe un resultado guardado para este indice?:"+str(flag))
-    #     while i in self.results:
-    #         print("la instancia n°"+str(i)+"ya se corrio, su resultado fue:" + str(self.result[i])+",avanzando")
-    #         self.lastInstanceIndex = self.lastInstanceIndex + 1
-    #         if self.lastInstanceIndex >= len(self.range):
-    #             print("se paso del rango wey")
-    #             return None
-    #         else:
-    #             i = self.range[self.lastInstanceIndex]
-
-    #     print("retornando instancia n°"+str(i))
-    #     return i
+        return self.lastInstanceIndex
 
     def __str__(self):
         return self.name+" "+self.args.format(**self.params)
@@ -206,55 +181,6 @@ class Strategy(object):
         index = random.randint(0, len(self.sampledParameters[0])-1)
         return self.sampledParameters[0][index], self.sampledParameters[1][index]
 
-    # def selectInstance(self):
-    #     self.lastInstanceIndex = self.lastInstanceIndex + 1
-    #     if self.range:
-    #         print("lastInstanceIndex: " + str(self.lastInstanceIndex))
-    #         if self.lastInstanceIndex >= len(self.range):
-    #             print("se paso del rango wey")
-    #             return None
-    #         print("resultados hasta ahora:")
-    #         print(self.results)
-    #         i = self.range[self.lastInstanceIndex]
-    #         print("indice a retornar: "+str(i))
-    #         #flag = self.results.get(i)
-    #         print("existe un resultado guardado para este indice?:"+str(flag))
-    #         while i in self.results:
-    #             print("la instancia n°"+str(i)+"ya se corrio, su resultado fue:"+str(self.result[i])+",avanzando")
-    #             self.lastInstanceIndex = self.lastInstanceIndex + 1
-    #             if self.lastInstanceIndex >= len(self.range):
-    #                 print("se paso del rango wey")
-    #                 return None
-    #             else:
-    #                 i = self.range[self.lastInstanceIndex]
-    #         print("retornando instancia n°"+str(i))
-    #         return i    
-    #     return self.lastInstanceIndex
-
-    # def mergeRanges(self, ___range):
-    #     print("inside Strategy mergeRanges")
-    #     print("merge-ranges :::start::: resultados hasta ahora:")
-    #     print(self.results)
-    #     if not self.range:
-    #         print("no hay rango, asignamos el entrante")
-    #         self.range  =  ___range
-    #         random.shuffle(list(___range))#instanceOrderGenerator(___range)
-    #         print("ins_ord:")
-    #         print(self.ins_ord)
-    #         self.lastInstanceIndex = -1
-    #         print("leaving mergeRanges")
-    #     else:
-    #         print("si hay rango, hacemos una union de rangos")
-    #         list1 = list(self.range)
-    #         list2 = list(___range)
-    #         list3 = list(set(list1) | set(list2))
-    #         self.range = list3
-    #         random.shuffle(self.range)
-    #         self.lastInstanceIndex = -1
-    #         print("leaving mergeRanges")
-    #     print("merge-ranges :::::: resultados hasta ahora:")
-    #     print(self.results)
-
     def sampleParameters(self):
         # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
         # print(data)
@@ -291,8 +217,13 @@ class Strategy(object):
 
     def load_global_results(self):
         # revisar si existe archivo de esta estrategia
-        path = "/results/strategies/{}.txt".format(self.__hash__)
+        print("load_global_results")
+        print("strategy hash:", hash(self))
+        print("permutation folder:", self.permutation_folder)
+        path = "/results/{}/strategies/{}.txt".format(self.permutation_folder, hash(self))
+        print("path:", path)
         if os.path.isfile(path):
+            print("bbbbb")
             # si existe, leer linea por linea y añadir resultado
             with open(path) as f:
                 content = f.readlines()
@@ -301,6 +232,6 @@ class Strategy(object):
                 self.addResult(index, result)
         else:
             # si no existe, crear archivo
-            open(path, 'w').close()
-            with open("results/strategies/strategy_dict.txt","a") as f:
-                f.write("{}:{}.txt\n".format(self, self.__hash__))
+            print("cccccc")
+            with open("results/"+self.permutation_folder+"/strategies/strategy_dict.txt", "a") as f:
+                f.write("{}:{}.txt\n".format(self, hash(self)))

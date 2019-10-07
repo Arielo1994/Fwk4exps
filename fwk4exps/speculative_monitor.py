@@ -11,6 +11,8 @@ from .classes.anytime import Anytime
 import multiprocessing
 import datetime
 import os
+import hashlib
+import numpy as np
 
 
 class SpeculativeMonitor(object):
@@ -144,8 +146,8 @@ class SpeculativeMonitor(object):
         node = self.tree.root
         print("raiz:", node)
         while node.is_not_leaf:
-            self._tree_descent_strategies[hash(node.alg1)] = alg1
-            self._tree_descent_strategies[hash(node.alg2)] = alg2
+            self._tree_descent_strategies[hash(node.alg1)] = node.alg1
+            self._tree_descent_strategies[hash(node.alg2)] = node.alg2
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
                 self.__msg.append(0)
                 if node.left is None:
@@ -174,13 +176,13 @@ class SpeculativeMonitor(object):
         selecciona la estrategia que maximiza la volatilidad
         """
         total = len(self.instances)
-        self.tree_desc_likelihood = self.tree_descent_outcome.likelihood()
-        self.max_sim_likelihood = max_leaf.likelihood()
+        self.tree_desc_likelihood = self.tree_descent_outcome.likelihood(total)
+        self.max_sim_likelihood = max_leaf.likelihood(total)
         if self.policy == "max_sim":
-            original_likelihood = max_leaf.likelihood()
+            original_likelihood = max_leaf.likelihood(total)
 
         if self.policy == "descent_spec":
-            original_likelihood = self.tree_descent_outcome.likelihood()
+            original_likelihood = self.tree_descent_outcome.likelihood(total)
 
         #############################
         # sampleo de sumas restantes#
@@ -217,7 +219,7 @@ class SpeculativeMonitor(object):
                 continue
             self.amplitude[k] = max(abs(original_likelihood - self.opt_q[k]), abs(original_likelihood - self.pess_q[k]))
 
-        if len(amplitude):
+        if len(self.amplitude):
             max_key = max(self.amplitude, key=self.amplitude.get)
             return self._tree_descent_strategies[max_key]
         else:
@@ -295,8 +297,7 @@ class SpeculativeMonitor(object):
         self.experimental_design = experimental_design
         self.pifile = pifile
         self.instances = self.readData(pifile)
-        if not self.load_previous_results():
-            self.create_result_folder()
+        self.load_permutation_file()
 
     def _toogle_anytime():
         self.anytime = not self.anytime
@@ -316,19 +317,22 @@ class SpeculativeMonitor(object):
             alg = Strategy.strategy_instance_dict[k]
             if alg.needs_to_be_sampled:
                 alg.sampleParameters()
-
+        self.sampler.pass_info(self.tree,self._tree_descent_strategies,self.instances)
         self.sampler.simulations(self.__totalSimulations)
         total = len(self.instances)
         max_likelihood = 0
         best_leaf = None
         for n in self.node_dict:
-            if not n.is_not_leaf:
-                if n.leaf_node_der.likelihood(total) > max_likelihood:
-                    max_likelihood = n.leaf_node_der.likelihood(total)
-                    best_leaf = n.leaf_node_der
-                if n.leaf_node_izq.likelihood(total) > max_likelihood:
-                    max_likelihood = n.leaf_node_izq.likelihood(total)
-                    best_leaf = n.leaf_node_izq
+
+            if not self.node_dict[n].is_not_leaf:
+                if self.node_dict[n].leaf_node_der is not None:
+                    if self.node_dict[n].leaf_node_der.likelihood(total) > max_likelihood:
+                        max_likelihood = self.node_dict[n].leaf_node_der.likelihood(total)
+                        best_leaf = self.node_dict[n].leaf_node_der
+                if self.node_dict[n].leaf_node_izq is not None:
+                    if self.node_dict[n].leaf_node_izq.likelihood(total) > max_likelihood:
+                        max_likelihood = self.node_dict[n].leaf_node_izq.likelihood(total)
+                        best_leaf = self.node_dict[n].leaf_node_izq
         # unb_q = self.currentQuality()
         # print("unbiased quality: "+str(unb_q))
 
@@ -401,16 +405,16 @@ class SpeculativeMonitor(object):
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
         jobs = []
-        for i in range(1, cpu_count):
+        for i in range(1, self.cpu_count):
             instance_index = alg.selectInstance()
-            if instance_index >= self.instances:
+            if instance_index >= len(self.instances):
                 alg.isCompleted = True
                 break
             instance = self.instances[instance_index]
-            p = multiprocessing.Process(target=self.run2, args=(instance, instance_index, pifile, return_dict))
+            p = multiprocessing.Process(target=alg.run2, args=(instance, instance_index, self.pifile, return_dict))
             jobs.append(p)
         for p in jobs:
-            p.start()    
+            p.start()
         for p in jobs:
             p.join()
         keys = [key for key, value in return_dict.items()]
@@ -425,27 +429,38 @@ class SpeculativeMonitor(object):
 
         return content
 
-    def load_previous_results(self):
+    def load_permutation_file(self):
         """
-        Usuario escoge reanudar experimento
-        previo
+        Carga archivo de permutacion.
         """
-        pass
+        print("load_permutation_file")
+        # obtiene hash de archivo de instancias
+        hasher = hashlib.md5()
+        with open(self.pifile, 'rb') as afile:
+            buf = afile.read()
+            hasher.update(buf)
+        file_md5_hash = hasher.hexdigest()
+        Strategy.permutation_folder = file_md5_hash
 
-    def create_result_folder(self):
-        timestamp = datetime.datetime.now().strftime("_%A,%d-%m-%Y_%I:%M:%S%p")
-        folder_name = "results/"+"experiment" + timestamp
-        self.experiment_id = folder_name
-        try:
-            os.mkdir(folder_name)
-            print("Directory ", folder_name,  " Created ")
-        except FileExistsError:
-            print("Directory ", folder_name,  " already exists")
-        # ---create experiment info file
-        with open(folder_name+"/info.txt", "w") as info:
-            info.write("some info")
-        # ---create results file
-            open(folder_name+"/results.txt", "w")
+        print("Strategy.permutation_folder:", Strategy.permutation_folder)
+
+        # checka si existe una carpeta para este archivo de instancias
+        if not os.path.exists('results/'+file_md5_hash):
+            # si no existe creo la carpeta y el archivo de permutacion
+            os.makedirs('results/'+file_md5_hash+'/strategies')
+            with open(self.pifile) as f:
+                content = f.readlines()
+            self.permutation = np.random.permutation(range(0, len(content)))
+            with open("results/"+file_md5_hash+"/permutation.txt", "a") as f:
+                for value in self.permutation:
+                    f.write(str(value)+"\n")
+        else:
+            # si existe, abro el archivo de permutacion y lo leo
+            with open("results/"+file_md5_hash+"/permutation.txt", "r") as f:
+                self.permutation = []
+                content = f.readlines()
+                for value in content:
+                    self.permutation.append(value)
 
     def terminate(self):
         """
@@ -494,5 +509,8 @@ class SpeculativeMonitor(object):
                 _msg = self.__msg
                 _msg.append(1)
                 aux.leaf_node_der = LeafNode(_msg, experiment_state)
-                print("__speculativeNode:", self.__speculativeNode)
+                print("nodo con outcome a la der:", aux)
+                print("nodo hoja:", aux.leaf_node_der)
+
+                #print("__speculativeNode:", self.__speculativeNode)
 
