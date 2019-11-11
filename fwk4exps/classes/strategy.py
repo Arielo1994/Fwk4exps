@@ -6,6 +6,8 @@ import multiprocessing
 import numpy as np
 import pymc3 as pm
 import os.path
+import json
+import hashlib
 
 
 class Strategy(object):
@@ -78,7 +80,6 @@ class Strategy(object):
                 instance.range = None
                 instance.isCompleted = False
                 instance.needs_to_be_sampled = False
-                
                 instance.load_global_results()
                 cls.strategy_instance_dict[strategy_hash] = instance
                 print("strategy dict: ")
@@ -166,7 +167,12 @@ class Strategy(object):
 
     def __hash__(self):
         params = tuple(self.params.values())
-        return hash((self.pathExe, self.args, self.name)+params)
+        # return hash((self.pathExe, self.args, self.name)+params)
+        data = tuple((self.pathExe, self.args, self.name))
+        data = data + params
+        data_json_string = json.dumps(data)
+        md5 = hashlib.md5(data_json_string.encode("utf-8")).hexdigest()
+        return hash(md5)
 
     def __eq__(self, other):
         return self.pathExe == other.pathExe and self.args == other.args and self.params == other.params and self.name == other.name

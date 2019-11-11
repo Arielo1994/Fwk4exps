@@ -78,7 +78,14 @@ Cuando se agregan lineas en archivo de resultados de estrategia?:
     ☐ cada vez que se agrega un resultado al diccionario de resultados de la estrategia, se añade al final del archivo.
 
 ################################################################################################
-Suffle de instancias:
-    ☐ 
-    ☐ 
-    ☐ 
+Crear repositorio github, con README y TODO
+☐ Organizar datos:
+
+    ☐ data
+        ☐ experiment_(hash_instancias)
+            ☐ strategies
+            ☐ permutation.txt
+
+☐ Al comenzar la ejecución se carga archivo de permutación asociado al archivo de instancias. 
+    Si no existe se crea (puede tener un archivo diccionario). Nombre del archivo de permutación 
+    (sha256 o md5 del contenido del archivo de instancias).

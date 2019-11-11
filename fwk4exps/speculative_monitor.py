@@ -49,12 +49,13 @@ class SpeculativeMonitor(object):
         self.optimisticQuality = dict()
         self.pessimisticQuality = dict()
         self.amplitude = dict()
-        self.experiment_id = None
+        self.experiment_hash = None
         self.tree_descent_outcome = None
         self.policy = policy
         self.tree_desc_likelihood = 0
         self.max_sim_likelihood = 0
         self._tree_descent_strategies = {}
+        self.execution_num = 0
         if cpu_count is None:
             self.cpu_count = multiprocessing.cpu_count()
 
@@ -145,7 +146,7 @@ class SpeculativeMonitor(object):
             self.tree.set_root(self._retrieve_node())
         node = self.tree.root
         print("raiz:", node)
-        while node.is_not_leaf:
+        while True:
             self._tree_descent_strategies[hash(node.alg1)] = node.alg1
             self._tree_descent_strategies[hash(node.alg2)] = node.alg2
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
@@ -303,11 +304,12 @@ class SpeculativeMonitor(object):
         self.anytime = not self.anytime
 
     def _save_results(self, best_alg):
-        with open(self.experiment_id+"/results.txt", "a") as res:
-            execution_num = self.execution_num()
+        with open("results/"+self.experiment_hash+"/results.txt", "a+") as res:
+            execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            res.write(execution_num + "," + max_likelihood + "," + tree_desc_likelihood + "," + best_alg + "\n")
+            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(best_alg) + "\n")
+            # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
 
     def _update_likelihood(self):
         print("#############################################################")
@@ -416,6 +418,7 @@ class SpeculativeMonitor(object):
         for p in jobs:
             p.start()
         for p in jobs:
+            self.execution_num = self.execution_num + 1
             p.join()
         keys = [key for key, value in return_dict.items()]
         for k in keys:
@@ -440,12 +443,14 @@ class SpeculativeMonitor(object):
             buf = afile.read()
             hasher.update(buf)
         file_md5_hash = hasher.hexdigest()
+        self.experiment_hash = file_md5_hash
         Strategy.permutation_folder = file_md5_hash
 
         print("Strategy.permutation_folder:", Strategy.permutation_folder)
 
         # checka si existe una carpeta para este archivo de instancias
         if not os.path.exists('results/'+file_md5_hash):
+            print("creating permutation folder!")
             # si no existe creo la carpeta y el archivo de permutacion
             os.makedirs('results/'+file_md5_hash+'/strategies')
             with open(self.pifile) as f:
@@ -456,6 +461,7 @@ class SpeculativeMonitor(object):
                     f.write(str(value)+"\n")
         else:
             # si existe, abro el archivo de permutacion y lo leo
+            print("loading permutation folder!")
             with open("results/"+file_md5_hash+"/permutation.txt", "r") as f:
                 self.permutation = []
                 content = f.readlines()
@@ -512,5 +518,4 @@ class SpeculativeMonitor(object):
                 print("nodo con outcome a la der:", aux)
                 print("nodo hoja:", aux.leaf_node_der)
 
-                #print("__speculativeNode:", self.__speculativeNode)
-
+                # print("__speculativeNode:", self.__speculativeNode)
