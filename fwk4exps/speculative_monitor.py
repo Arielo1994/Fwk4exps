@@ -45,7 +45,7 @@ class SpeculativeMonitor(object):
         self.quality_frame = None
         self.sampler = Sampler()
         self.instances = None
-        self.cpu_count = None
+        self.cpu_count = cpu_count
         self.optimisticQuality = dict()
         self.pessimisticQuality = dict()
         self.amplitude = dict()
