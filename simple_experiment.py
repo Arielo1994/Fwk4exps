@@ -17,7 +17,7 @@ def experimentalDesign():
 
     S3 = f4e.bestStrategy(S, S2)
     print("lalalalaal")
-    print("The best found parameter values are: ",S.params)
+    print("The best found parameter values are: ", S.params)
 
     f4e.terminate()
 

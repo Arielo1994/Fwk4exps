@@ -1,11 +1,11 @@
 class LeafNode(object):
     def __init__(self, msg, state):
-        print("entra al init")
+        # print("entra al init")
         self.output = None
         self.msg = msg
         self.simulations = 0
         self.state = state
-        print("sale del init")
+        # print("sale del init")
 
     def __str__(self):
         return str(self.msg)

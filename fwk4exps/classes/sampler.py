@@ -16,14 +16,14 @@ class Sampler(object):
         # self.parameters_algos = parameters_algos
 
     def simulations(self, total, __alg=None, sampl_alg_sum=None):
-        print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
-        print("algoritmos:", self.algoritmos)
+        # print("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
+        # print("algoritmos:", self.algoritmos)
         self.tree.refreshSimulations()
 
         mcmc_sampl_mean = dict()
         mcmc_sampl_sd = dict()
         if sampl_alg_sum:
-            print("simulaciones sesgadas")
+            # print("simulaciones sesgadas")
             for x in range(1, total + 1):
                 for k in self.algoritmos:
                     alg = self.algoritmos[k]
@@ -31,7 +31,7 @@ class Sampler(object):
                     mcmc_sampl_mean[hash(alg)], mcmc_sampl_sd[hash(alg)] = alg.randomSampledParameters()
                 self.simulation(mcmc_sampl_mean, mcmc_sampl_sd, __alg, sampl_alg_sum)
         else:
-            print("simulaciones no sesgadas:")
+            # print("simulaciones no sesgadas:")
             for x in range(1, total + 1):
                 for k in self.algoritmos:
                     alg = self.algoritmos[k]
@@ -109,31 +109,3 @@ class Sampler(object):
             __sum = (sum(alg.result_list()) + __sum)/total*1.0
             # print("simulated Mean: "+str(__sum))
             return __sum
-
-    # def sampleParameters(self, data):
-    #     # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
-    #     # print(data)
-    #     print("sampling parameters given data")
-
-    #     # extracted means and sigmas from
-    #     __medias = []
-    #     __sigmas = [] 
-    #     # with suppress_stdout:
-    #     with pm.Model():
-    #         mu = pm.Normal('mu', np.mean(data), 1)
-    #         sigma = pm.Uniform('sigma', lower=0.001, upper=1)
-
-    #         returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
-
-    #         step = pm.Metropolis()
-    #         trace = pm.sample(5000, step, cores=4, progressbar=False)
-
-    #         for t in trace:
-    #             __medias.append(t["mu"])
-    #             __sigmas.append(t["sigma"])
-    #     ret = __medias, __sigmas
-    #     print("#########__________############")
-    #     print("lenght of sampled Parameters:")
-    #     print(len(ret[0]))
-    #     print("#########__________############")
-    #     return ret

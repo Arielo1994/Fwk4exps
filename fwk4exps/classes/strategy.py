@@ -15,19 +15,19 @@ class Strategy(object):
     permutation_folder = None
 
     def __new__(cls, *args, **kwargs):
-        print("__new__ method")
+        # print("__new__ method")
         instance = super(Strategy, cls).__new__(cls)
 
         if 'original' in kwargs:
-            print("copying strategy")
+            # print("copying strategy")
             original = kwargs['original']
             pathExe = original.pathExe
             __args = original.args
             if 'new_name' in kwargs:
-                print("new_name")
+                # print("new_name")
                 name = kwargs['new_name']
             else:
-                print("no new_name")
+                # print("no new_name")
                 name = original.name
 
             params = original.params.copy()
@@ -38,10 +38,10 @@ class Strategy(object):
 
             strategy_hash = hash((pathExe, __args, name)+tuple(params.values()))
             if strategy_hash in cls.strategy_instance_dict:
-                print("there was already a copy")
+                # print("there was already a copy")
                 return cls.strategy_instance_dict[strategy_hash]
             else:
-                print("creating copy instance")
+                # print("creating copy instance")
                 instance.name = name
                 instance.pathExe = pathExe
                 instance.args = __args
@@ -57,18 +57,18 @@ class Strategy(object):
 
                 cls.strategy_instance_dict[strategy_hash] = instance
         else:
-            print("searching for strategy")
+            # print("searching for strategy")
             name = args[0]
             pathExe = args[1]
             __args = args[2]
             params = args[3]
-            print("name {0} pathexe {1} args {2} params {3}".format(name, pathExe, __args, params))
+            # print("name {0} pathexe {1} args {2} params {3}".format(name, pathExe, __args, params))
             strategy_hash = hash((pathExe, __args, name)+tuple(params.values()))
             if strategy_hash in cls.strategy_instance_dict:
-                print("strategy found")
+                # print("strategy found")
                 return cls.strategy_instance_dict[strategy_hash]
             else:
-                print("creating strategy")
+                # print("creating strategy")
                 instance.name = name
                 instance.pathExe = pathExe
                 instance.args = __args
@@ -82,14 +82,14 @@ class Strategy(object):
                 instance.needs_to_be_sampled = False
                 instance.load_global_results()
                 cls.strategy_instance_dict[strategy_hash] = instance
-                print("strategy dict: ")
+                # print("strategy dict: ")
                 print(cls.strategy_instance_dict)
 
         return instance
 
     def __init__(self, name=None, pathExe=None, args=None, params=None, original=None, new_params=None, new_name=None):
         print("__init__ method")
-        print("succesfully created Strategy")
+        #print("succesfully created Strategy")
 
     def to_string(self):
         pass
@@ -109,7 +109,7 @@ class Strategy(object):
 
     def run(self, instance, i, PI):
         # PI = '/home/investigador/Documentos/algoritmo100real/Metasolver/extras/fw4exps/instancesBR.txt'
-        print("run function")
+        # print("run function")
         # print("instance: {}, i: {}, PI: {}".format(instance,i,PI))
         aux = copy.copy(PI)
         # print("aux:", aux)
@@ -128,12 +128,12 @@ class Strategy(object):
         args = self.args.format(**self.params)
 
         commando = self.pathExe + " .." + instance.rstrip() + " " + args
-        print("comando:", commando)
+        # print("comando:", commando)
         output = subprocess.getoutput(commando)
         output = output.splitlines()
         self.results[i] = float(output[-1])
-        print("resultado: " + output[-1])
-        print("self.rsults:", self.results)
+        # print("resultado: " + output[-1])
+        # print("self.rsults:", self.results)
         return float(output[-1])
 
     def run2(self, instance, i, PI, return_dict):
@@ -163,7 +163,7 @@ class Strategy(object):
         for k in keys:
             self.addResult(k, return_dict[k])
         self.needs_to_be_sampled = True
-        print("resultados corrida minima:", self.results)
+        # print("resultados corrida minima:", self.results)
 
     def __hash__(self):
         params = tuple(self.params.values())
@@ -191,7 +191,7 @@ class Strategy(object):
         # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
         # print(data)
         data = self.result_list()
-        print("sampling parameters given data")
+        # print("sampling parameters given data")
         np.random.seed(123)
 
         # extracted means and sigmas from
@@ -211,10 +211,10 @@ class Strategy(object):
                 __medias.append(t["mu"])
                 __sigmas.append(t["sigma"])
         ret = __medias, __sigmas
-        print("#########__________############")
-        print("lenght of sampled Parameters:")
-        print(len(ret[0]))
-        print("#########__________############")
+        #print("#########__________############")
+        #print("lenght of sampled Parameters:")
+        #print(len(ret[0]))
+        #print("#########__________############")
         # return ret
         self.sampledParameters = ret
 
@@ -223,13 +223,13 @@ class Strategy(object):
 
     def load_global_results(self):
         # revisar si existe archivo de esta estrategia
-        print("load_global_results")
-        print("strategy hash:", hash(self))
-        print("permutation folder:", self.permutation_folder)
+        # print("load_global_results")
+        # print("strategy hash:", hash(self))
+        # print("permutation folder:", self.permutation_folder)
         path = "/results/{}/strategies/{}.txt".format(self.permutation_folder, hash(self))
-        print("path:", path)
+        # print("path:", path)
         if os.path.isfile(path):
-            print("bbbbb")
+            # print("bbbbb")
             # si existe, leer linea por linea y añadir resultado
             with open(path) as f:
                 content = f.readlines()
@@ -238,6 +238,6 @@ class Strategy(object):
                 self.addResult(index, result)
         else:
             # si no existe, crear archivo
-            print("cccccc")
+            # print("cccccc")
             with open("results/"+self.permutation_folder+"/strategies/strategy_dict.txt", "a") as f:
                 f.write("{}:{}.txt\n".format(self, hash(self)))
