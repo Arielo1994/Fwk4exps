@@ -1,6 +1,6 @@
 import fwk4exps.speculative_monitor as fwk
 
-f4e = fwk.SpeculativeMonitor(cpu_count=2)
+f4e = fwk.SpeculativeMonitor(cpu_count=7)
 
 bsg_path = '../Metasolver/BSG_CLP'
 
