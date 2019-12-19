@@ -146,23 +146,21 @@ class SpeculativeMonitor(object):
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
                 self.__msg.append(0)
                 node.add_left(self._retrieve_node())
-                if node.left is None:
+                if node.left.is_leaf == True:
+                    self.tree_descent_outcome = node.left
                     break
                 node = node.left
             else:
                 self.__msg.append(1)
                 node.add_right(self._retrieve_node())
-                if node.right is None:
+                if node.right.is_leaf == True:
+                    self.tree_descent_outcome = node.right
                     break
                 node = node.right
-        if self.__msg[-1] == 0:
-            self.tree_descent_outcome = node.leaf_node_izq
-        else:
-            self.tree_descent_outcome = node.leaf_node_der
+
         print("######end_tree_descent########")
         print("node at the end of tree_descent:", node)
-        print("izq leaf node:", node.leaf_node_izq)
-        print("der leaf node:", node.leaf_node_der)
+
 
     def _retrieve_node(self):
         """recibe como argumento un mensaje que contiene indicaciones
@@ -386,52 +384,16 @@ class SpeculativeMonitor(object):
         llegado el final del experimento se crea un nodo hoja que tiene como
         identificador el estado final del experimento.
         """
-        print("creando nodo hoja")
-        print("msg: ", self.__msg)
-        aux = self.tree.root
-        last = self.__msg.pop()
-        print("msg: ", self.__msg)
-        for i in self.__msg:
-            if i == 0:
-                aux = aux.left
-                continue
-            if i == 1:
-                aux = aux.right
-                continue
-        aux.is_not_leaf = False
 
-        if last == 0:
-            print("getting traceback info:")
-            experiment_state = TraceBackInfo.getExperimentState()
-            print("hash string experiment_state", experiment_state)
-            print("leaf_dict:", self.leaf_dict)
-            if experiment_state in self.leaf_dict:
-                print("esta dentro del diccionario")
-                aux.leaf_node_izq = self.leaf_dict[experiment_state]
-            else:
-                print("no esta en el diccionario")
-                _msg = self.__msg
-                _msg.append(0)
-                aux.leaf_node_izq = LeafNode(_msg, experiment_state)
-                print("nodo con outcome a la izq:", aux)
-                print("nodo hoja:", aux.leaf_node_izq)
+        experiment_state = TraceBackInfo.getExperimentState()
+        if experiment_state in self.node_dict:
+            self.__speculativeNode = self.node_dict[experiment_state]
         else:
-            print("getting traceback info:")
-            experiment_state = TraceBackInfo.getExperimentState()
-            print("hash string experiment_state", experiment_state)
-            print("leaf_dict:", self.leaf_dict)
-            if experiment_state in self.leaf_dict:
-                print("esta dentro del diccionario")
-                aux.leaf_node_der = self.leaf_dict[experiment_state]
-            else:
-                print("no esta en el diccionario")
-                _msg = self.__msg
-                _msg.append(1)
-                aux.leaf_node_der = LeafNode(_msg, experiment_state)
-                print("nodo con outcome a la der:", aux)
-                print("nodo hoja:", aux.leaf_node_der)
+            self.__speculativeNode = LeafNode(self.__msg, experiment_state)
+            self.node_dict[experiment_state] = self.__speculativeNode
 
-                # print("__speculativeNode:", self.__speculativeNode)
+        raise ValueError
+                
 
     """ funciones para agregar mas adelante"""
     #!----------------------------------------------------

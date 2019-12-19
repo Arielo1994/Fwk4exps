@@ -42,31 +42,28 @@ class Sampler(object):
         n = self.tree.root
         while n is not None:
             n.addSimulationVisit()
-            total = n.total_instances
-            if __alg:
-                if n.alg1 == __alg:
-                    simulated_mean1 = self.simul_mean(__alg, total, compl_sum=sampl_alg_sum)
-                    simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])                
-                elif n.alg2 == __alg:
-                    simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
-                    simulated_mean2 = self.simul_mean(__alg, total, compl_sum=sampl_alg_sum)
-                else:
-                    simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
-                    simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
-            else:
-                simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
-                simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
-
-            if simulated_mean1 - n.delta_sig > simulated_mean2:
-                n.p1 = n.p1+1
-                if n.leaf_node_izq is not None:
-                    n.leaf_node_izq.add_simulation()
-                n = n.left
-            else:
-                n.p2 = n.p2+1
-                if n.leaf_node_der is not None:
-                    n.leaf_node_der.add_simulation()
-                n = n.right
+            if n.is_leaf == False:
+              total = n.total_instances
+              if __alg:
+                  if n.alg1 == __alg:
+                      simulated_mean1 = self.simul_mean(__alg, total, compl_sum=sampl_alg_sum)
+                      simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])                
+                  elif n.alg2 == __alg:
+                      simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
+                      simulated_mean2 = self.simul_mean(__alg, total, compl_sum=sampl_alg_sum)
+                  else:
+                      simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
+                      simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
+              else:
+                  simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
+                  simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
+          
+              if simulated_mean1 - n.delta_sig > simulated_mean2:
+                  n.p1 = n.p1+1
+                  n = n.left
+              else:
+                  n.p2 = n.p2+1
+                  n = n.right
 
     def sampleoDeSumas(self):
         sampledSums = dict()

@@ -5,6 +5,7 @@ class LeafNode(object):
         self.msg = msg
         self.simulations = 0
         self.state = state
+        self.is_leaf = True
         # print("sale del init")
 
     def __str__(self):
@@ -18,3 +19,9 @@ class LeafNode(object):
 
     def __eq__(self, other):
         return self.state == other.state
+        
+    def refreshSimulations(self):
+        self.simulations = 0
+
+    def addSimulationVisit(self):
+        self.simulations = self.simulations + 1

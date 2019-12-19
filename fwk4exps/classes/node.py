@@ -11,8 +11,9 @@ class Node(object):
         self.total_instances = total_instances
         self.delta_sig = delta_sig
         self.is_not_leaf = True
-        self.leaf_node_izq = None
-        self.leaf_node_der = None
+        #self.leaf_node_izq = None
+        #self.leaf_node_der = None
+        self.is_leaf = False
 
     def compare_strategies(self, pifile, instances, cpu_count):
         """ Compara la evaluacion parcial de las medias de ambas
@@ -79,11 +80,7 @@ class Node(object):
             self.simulationVisitCount = 0
             self.p1 = 0
             self.p2 = 0
-            if self.leaf_node_der is not None:
-                self.leaf_node_der.simulations = 0
 
-            if self.leaf_node_izq is not None:
-                self.leaf_node_izq.simulations = 0
             # Then recur on left child
             if self.left is not None:
                 self.left.refreshSimulations()
