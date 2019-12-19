@@ -114,25 +114,26 @@ class Strategy(object):
         aux = copy.copy(PI)
         # print("aux:", aux)
         aux = aux.split('/')
-        # print("aux", aux)
+        print("aux", aux)
         aux.pop()
-        aux.pop(0)
-        PI = ""
-        for e in aux:
-            PI = PI+"/"+e
-        PI = PI+"/"
-        instance = PI+instance
+        if len(aux)>0 :
+          aux.pop(0)
+          PI = ""
+          for e in aux:
+              PI = PI+"/"+e
+          PI = PI+"/"
+          instance = PI+instance
         # args = self.args
         # for k, v in self.params.items():
         #     args = args.replace(k, str(v))
         args = self.args.format(**self.params)
 
         commando = self.pathExe + " .." + instance.rstrip() + " " + args
-        # print("comando:", commando)
+        print("comando:", commando)
         output = subprocess.getoutput(commando)
         output = output.splitlines()
         self.results[i] = float(output[-1])
-        # print("resultado: " + output[-1])
+        print("resultado: " + output[-1])
         # print("self.rsults:", self.results)
         return float(output[-1])
 
@@ -205,7 +206,7 @@ class Strategy(object):
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
             step = pm.Metropolis()
-            trace = pm.sample(5000, step, cores=4, progressbar=False)
+            trace = pm.sample(1000, step, cores=2, progressbar=True)
 
             for t in trace:
                 __medias.append(t["mu"])

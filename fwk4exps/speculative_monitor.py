@@ -246,16 +246,12 @@ class SpeculativeMonitor(object):
         max_likelihood = 0
         best_leaf = None
         for n in self.node_dict:
+          
+          if self.node_dict[n].is_leaf:
+            if self.node_dict[n].likelihood(total) > max_likelihood:
+              max_likelihood = self.node_dict[n].likelihood(total)
+              best_leaf = self.node_dict[n]
 
-            if not self.node_dict[n].is_not_leaf:
-                if self.node_dict[n].leaf_node_der is not None:
-                    if self.node_dict[n].leaf_node_der.likelihood(total) > max_likelihood:
-                        max_likelihood = self.node_dict[n].leaf_node_der.likelihood(total)
-                        best_leaf = self.node_dict[n].leaf_node_der
-                if self.node_dict[n].leaf_node_izq is not None:
-                    if self.node_dict[n].leaf_node_izq.likelihood(total) > max_likelihood:
-                        max_likelihood = self.node_dict[n].leaf_node_izq.likelihood(total)
-                        best_leaf = self.node_dict[n].leaf_node_izq
         # unb_q = self.currentQuality()
         # print("unbiased quality: "+str(unb_q))
 

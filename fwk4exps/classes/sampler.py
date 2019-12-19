@@ -64,6 +64,7 @@ class Sampler(object):
               else:
                   n.p2 = n.p2+1
                   n = n.right
+            else: break #leaf node
 
     def sampleoDeSumas(self):
         sampledSums = dict()
