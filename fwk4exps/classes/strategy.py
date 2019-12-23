@@ -191,6 +191,7 @@ class Strategy(object):
         return list(self.results.values())
 
     def randomSampledParameters(self): 
+        #if len(self.sampledParameters) ==0: self.sampleParameters()
         index = random.randint(0, len(self.sampledParameters[0])-1)
         return self.sampledParameters[0][index], self.sampledParameters[1][index]
 
@@ -242,6 +243,9 @@ class Strategy(object):
             for line in content:
                 index, result = line.split(",")
                 self.results[int(index)] = float(result)
+            
+            self.lastInstanceIndex = len(self.results)-1
+            self.needs_to_be_sampled = True
         else:
             # si no existe, crear archivo
             # print("cccccc")

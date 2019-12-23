@@ -120,7 +120,7 @@ class SpeculativeMonitor(object):
             best_alg = self._select_strategy(max_leaf)
             if best_alg is not None:
                 self._execute(best_alg)
-                self._save_results(best_alg)
+                self._save_results(max_leaf)
             else:
                 break
             print("loop end")
@@ -148,6 +148,7 @@ class SpeculativeMonitor(object):
                 node.add_left(self._retrieve_node())
                 if node.left.is_leaf == True:
                     self.tree_descent_outcome = node.left
+                    node.msg = self.__msg
                     break
                 node = node.left
             else:
@@ -155,8 +156,10 @@ class SpeculativeMonitor(object):
                 node.add_right(self._retrieve_node())
                 if node.right.is_leaf == True:
                     self.tree_descent_outcome = node.right
+                    node.msg = self.__msg
                     break
                 node = node.right
+            
 
         print("######end_tree_descent########")
         print("node at the end of tree_descent:", node)
@@ -216,6 +219,7 @@ class SpeculativeMonitor(object):
         lo crea si no existe
         y vuelve a retrieve node
         """
+        print("comparing strategies")
         print (self.__count, self.__msg)
         if self.__count < len(self.__msg):
             if self.__msg[self.__count] == 0:
@@ -227,9 +231,11 @@ class SpeculativeMonitor(object):
         experiment_state = TraceBackInfo.getExperimentState()
         if experiment_state in self.node_dict:
             self.__speculativeNode = self.node_dict[experiment_state]
+            print(1,self.__speculativeNode)
         else:
             self.__speculativeNode = Node(S1, S2, len(self.instances), 0)
             self.node_dict[experiment_state] = self.__speculativeNode
+            print(2,self.__speculativeNode)
 
         raise ValueError
 
@@ -240,7 +246,7 @@ class SpeculativeMonitor(object):
         for k in Strategy.strategy_instance_dict:
             alg = Strategy.strategy_instance_dict[k]
             if alg.needs_to_be_sampled:
-                alg.sampleParameters()
+               alg.sampleParameters()
         self.sampler.pass_info(self.tree,self._tree_descent_strategies,self.instances)
         self.sampler.simulations(self.__totalSimulations)
         total = len(self.instances)
@@ -290,12 +296,12 @@ class SpeculativeMonitor(object):
             alg.addResult(k, return_dict[k])
         alg.needs_to_be_sampled = True
 
-    def _save_results(self, best_alg):
+    def _save_results(self, max_leaf):
         with open("results/"+self.experiment_hash+"/results.txt", "a+") as res:
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(best_alg) + "\n")
+            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(max_leaf.msg) + "\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
 
     def _select_strategy(self, max_leaf):
