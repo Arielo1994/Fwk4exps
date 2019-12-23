@@ -24,14 +24,15 @@ class Sampler(object):
         mcmc_sampl_sd = dict()
         if sampl_alg_sum:
             # print("simulaciones sesgadas")
-            for x in range(1, total + 1):
+            
+            for x in range(total):
                 for k in self.algoritmos:
                     alg = self.algoritmos[k]
                     mcmc_sampl_mean[hash(alg)], mcmc_sampl_sd[hash(alg)] = alg.randomSampledParameters()
                 self.simulation(mcmc_sampl_mean, mcmc_sampl_sd, __alg, sampl_alg_sum)
         else:
             # print("simulaciones no sesgadas:")
-            for x in range(1, total + 1):
+            for x in range(total):
                 for k in self.algoritmos:
                     alg = self.algoritmos[k]
                     mcmc_sampl_mean[hash(alg)], mcmc_sampl_sd[hash(alg)] = alg.randomSampledParameters()
@@ -50,18 +51,18 @@ class Sampler(object):
                   elif n.alg2 == __alg:
                       simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
                       simulated_mean2 = self.simul_mean(__alg, total, compl_sum=sampl_alg_sum)
-                  else:
-                      simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
-                      simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
+                  #else:
+                  #    simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
+                  #    simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
               else:
                   simulated_mean1 = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[hash(n.alg1)], sd=mcmc_sampl_sd[hash(n.alg1)])
                   simulated_mean2 = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[hash(n.alg2)], sd=mcmc_sampl_sd[hash(n.alg2)])
               #print(simulated_mean1,simulated_mean2)
               if simulated_mean1 - n.delta_sig > simulated_mean2:
-                  n.p1 = n.p1+1
+                  #n.p1 = n.p1+1
                   n = n.left
               else:
-                  n.p2 = n.p2+1
+                  #n.p2 = n.p2+1
                   n = n.right
             else: break #leaf node
 
@@ -94,15 +95,15 @@ class Sampler(object):
     def simul_mean(self, alg, total, compl_sum=None, sd=None, mean=None):
         # print("simulando media para comparar")
         if compl_sum:
-            __sum = (sum(alg.result_list()) + compl_sum)/total*1.0
+            mean = (sum(alg.result_list()) + compl_sum)/total*1.0
             # print("simulated Mean: "+str(__sum))
-            return __sum  # + delta
+            return mean  # + delta
         elif sd and mean:
             # print("sd: "+str(sd))
             # print("mean: "+str(mean))
             remaining = total - len(alg.result_list())
             # print("remaining: "+str(remaining)) 
             __sum = np.random.normal(remaining * mean, np.sqrt(remaining) * sd)
-            __sum = (sum(alg.result_list()) + __sum)/total*1.0
+            mean = (sum(alg.result_list()) + __sum)/total*1.0
             # print("simulated Mean: "+str(__sum))
-            return __sum
+            return mean
