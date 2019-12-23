@@ -35,7 +35,7 @@ class Node(object):
             print("common key:", k)
             arr1.append(self.alg1.results[k])
             arr2.append(self.alg2.results[k])
-
+        print(arr1,arr2)
         if statistics.mean(arr1) > statistics.mean(arr2):
             print("#####end_compare_strategies")
             return True

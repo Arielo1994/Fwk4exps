@@ -182,12 +182,12 @@ class SpeculativeMonitor(object):
         else:
             print("_retrieve_node_else")
             self.marcarNodo()
-        finally:
-            print("_retrieve_node_finally")
-            print("nodo especulativo despues del try except")
-            print(self.__speculativeNode)
-            print("####end_retrieve_node")
-            return self.__speculativeNode
+        #finally:
+        print("_retrieve_node_finally")
+        print("nodo especulativo despues del try except")
+        print(self.__speculativeNode)
+        print("####end_retrieve_node")
+        return self.__speculativeNode
 
     def marcarNodo(self):
         aux = self.tree.root
@@ -216,6 +216,7 @@ class SpeculativeMonitor(object):
         lo crea si no existe
         y vuelve a retrieve node
         """
+        print (self.__count, self.__msg)
         if self.__count < len(self.__msg):
             if self.__msg[self.__count] == 0:
                 self.__count = self.__count+1

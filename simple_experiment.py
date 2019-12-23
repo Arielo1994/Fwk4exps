@@ -6,7 +6,7 @@ bsg_path = 'python opt_test.py'
 
 
 def experimentalDesign():
-    print("experimental design")
+    print("experimental design2")
     params = {"x": 0.0, "y": 0.0}
     S = fwk.Strategy('opt_test', bsg_path, '{x} {y}', params)
     print("S:", S)
