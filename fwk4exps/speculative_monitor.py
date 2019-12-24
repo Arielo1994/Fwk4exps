@@ -31,7 +31,7 @@ class SpeculativeMonitor(object):
         self.experimental_design = None
         self.instances = None
         self.global_results = None
-        self.__totalSimulations = 10000
+        self.__totalSimulations = 1000
         self.iteration = 1
         # self.__numOfExecutions = 0
         self.s2id = {}
@@ -301,7 +301,11 @@ class SpeculativeMonitor(object):
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(max_leaf.msg) + "\n")
+            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(max_leaf.msg) + " ")
+            for k in Strategy.strategy_instance_dict:
+              alg = Strategy.strategy_instance_dict[k]  
+              res.write( str(alg.lastInstanceIndex) + " ")
+            res.write("\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
 
     def _select_strategy(self, max_leaf):
