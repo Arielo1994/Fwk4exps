@@ -301,7 +301,7 @@ class SpeculativeMonitor(object):
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            res.write(str(execution_num) + "," + str(max_likelihood) + "," + str(tree_desc_likelihood) + "," + str(max_leaf.msg) + " ")
+            res.write(str(execution_num) + "," + str(tree_desc_likelihood) + "," +str(self.max_opt) + "," + str(self.min_pes) +"," + str(max_leaf.msg) + " ")
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
               res.write( str(alg.lastInstanceIndex) + " ")
@@ -350,11 +350,15 @@ class SpeculativeMonitor(object):
             if self.policy == "descent_spec":
                 self.pess_q[k] = self.tree_descent_outcome.likelihood(total)
 
+        self.max_opt=0.0
+        self.min_pes=1000.0
         for k in self._tree_descent_strategies:
             alg = self._tree_descent_strategies[k]
             if alg.isCompleted:
                 continue
             self.amplitude[k] = max(abs(original_likelihood - self.opt_q[k]), abs(original_likelihood - self.pess_q[k]))
+            if(max(self.opt_q[k],self.pess_q[k]) > self.max_opt): self.max_opt=max(self.opt_q[k],self.pess_q[k])
+            if(max(self.opt_q[k],self.pess_q[k]) < self.min_pes): self.min_pes=min(self.opt_q[k],self.pess_q[k])
 
         if len(self.amplitude):
             max_key = max(self.amplitude, key=self.amplitude.get)
