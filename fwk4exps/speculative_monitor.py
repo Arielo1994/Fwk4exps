@@ -31,7 +31,7 @@ class SpeculativeMonitor(object):
         self.experimental_design = None
         self.instances = None
         self.global_results = None
-        self.__totalSimulations = 1000
+        self.__totalSimulations = 5000
         self.iteration = 1
         # self.__numOfExecutions = 0
         self.s2id = {}
@@ -56,6 +56,8 @@ class SpeculativeMonitor(object):
         self.max_sim_likelihood = 0
         self._tree_descent_strategies = {}
         self.execution_num = 0
+        self.opt_res = {}
+        self.pes_res = {}
         if cpu_count is None:
             self.cpu_count = multiprocessing.cpu_count()
 
@@ -115,12 +117,12 @@ class SpeculativeMonitor(object):
         print("start_speculative_execution")
         while True:
             print("loop begin")
-            self._tree_descent()
-            max_leaf = self._update_likelihood()
-            best_alg = self._select_strategy(max_leaf)
+            probable_leaf = self._tree_descent()
+            self._update_likelihood()
+            best_alg = self._select_strategy2(probable_leaf)
             if best_alg is not None:
                 self._execute(best_alg)
-                self._save_results(max_leaf)
+                self._save_results(probable_leaf)
             else:
                 break
             print("loop end")
@@ -149,7 +151,7 @@ class SpeculativeMonitor(object):
                 if node.left.is_leaf == True:
                     self.tree_descent_outcome = node.left
                     node.msg = self.__msg
-                    break
+                    return node.left
                 node = node.left
             else:
                 self.__msg.append(1)
@@ -157,7 +159,7 @@ class SpeculativeMonitor(object):
                 if node.right.is_leaf == True:
                     self.tree_descent_outcome = node.right
                     node.msg = self.__msg
-                    break
+                    return node.right
                 node = node.right
             
 
@@ -243,30 +245,32 @@ class SpeculativeMonitor(object):
         print("#############################################################")
         print("diccionario de estrategias:", Strategy.strategy_instance_dict)
         print("#############################################################")
+ 
+ 
+        print("passing info")
+        self.sampler.pass_info(self.tree,Strategy.strategy_instance_dict,self.instances)
+
+
         for k in Strategy.strategy_instance_dict:
             alg = Strategy.strategy_instance_dict[k]
             if alg.needs_to_be_sampled:
-               alg.sampleParameters()
-        self.sampler.pass_info(self.tree,self._tree_descent_strategies,self.instances)
-        self.sampler.simulations(self.__totalSimulations)
-        total = len(self.instances)
-        max_likelihood = 0
-        best_leaf = None
-        for n in self.node_dict:
-          
-          if self.node_dict[n].is_leaf:
-            if self.node_dict[n].likelihood(total) > max_likelihood:
-              max_likelihood = self.node_dict[n].likelihood(total)
-              best_leaf = self.node_dict[n]
+               print("sampling summary:")
+               data = alg.result_list()
+               alg.sampledParameters = Sampler.sampleParameters(data)
+               alg.tmpParameters = alg.sampledParameters 
+               self.opt_res[alg], self.pes_res[alg] = self.sampler.sampledSum(alg, 95, 5, 1)
+               
+               data.append(self.opt_res[alg])
+               alg.optimisticParameters = Sampler.sampleParameters(data)
+               data.pop()
+               
+               data.append(self.pes_res[alg])
+               alg.pessimisticParameters = Sampler.sampleParameters(data)
+               data.pop()
+               alg.needs_to_be_sampled = False   
+               #print(data,opt_res,pes_res)                          
 
-        # unb_q = self.currentQuality()
-        # print("unbiased quality: "+str(unb_q))
 
-        for k in Strategy.strategy_instance_dict:
-            alg = Strategy.strategy_instance_dict[k]
-            alg.needs_to_be_sampled = False
-        
-        return best_leaf
 
     def _execute(self, alg):
         """ dado un algoritmo ejecuta cierto numero de
@@ -278,7 +282,7 @@ class SpeculativeMonitor(object):
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
         jobs = []
-        for i in range(1, self.cpu_count):
+        for i in range(0, self.cpu_count):
             instance_index = alg.selectInstance()
             if instance_index >= len(self.instances):
                 alg.isCompleted = True
@@ -301,71 +305,54 @@ class SpeculativeMonitor(object):
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            res.write(str(execution_num) + "," + str(tree_desc_likelihood) + "," +str(self.max_opt) + "," + str(self.min_pes) +"," + str(max_leaf.msg) + " ")
+            print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output)
+            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output)
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
               res.write( str(alg.lastInstanceIndex) + " ")
             res.write("\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
+        #a=input("Terminar?")
+        #if a=="s": sys.exit()
 
-    def _select_strategy(self, max_leaf):
-        """
-        selecciona la estrategia que maximiza la volatilidad
-        """
-        total = len(self.instances)
-        self.tree_desc_likelihood = self.tree_descent_outcome.likelihood(total)
-        self.max_sim_likelihood = max_leaf.likelihood(total)
-        if self.policy == "max_sim":
-            original_likelihood = max_leaf.likelihood(total)
+    def _select_strategy2(self, max_leaf):
+      self.sampler.simulations(self.__totalSimulations)
+      self.likelihood = max_leaf.likelihood(self.__totalSimulations)
 
-        if self.policy == "descent_spec":
-            original_likelihood = self.tree_descent_outcome.likelihood(total)
+      max_volatility = -0.1
+      best_strategy = None
+      self.max_like=0.0
+      self.min_like=1000.0
 
-        #############################
-        # sampleo de sumas restantes#
-        # ############################
-        print("    # sampleo de sumas restantes#")
-        self.sampler.pass_info(self.tree, Strategy.strategy_instance_dict, self.instances)
+      for k in self._tree_descent_strategies:
+         alg = self._tree_descent_strategies[k]
+         if alg.isCompleted: continue
+         alg.tmpParameters = alg.optimisticParameters
+         alg.results[999] = self.opt_res[alg]
+         self.sampler.simulations(self.__totalSimulations)
+         opt_likelihood = max_leaf.likelihood(self.__totalSimulations)
 
-        sampledSums = self.sampler.sampleoDeSumas()
-        self.opt_q = dict()
-        self.pess_q = dict()
-        self.amplitude = dict()
-        # for k in self._tree_descent_strategies:
-        for k in self._tree_descent_strategies:
-            alg = self._tree_descent_strategies[k]
-            if alg.isCompleted:
-                continue
-            opt_sum = sampledSums[alg, 95]
-            pess_sum = sampledSums[alg, 5]
-            self.sampler.simulations(self.__totalSimulations, alg, opt_sum)
-            if self.policy == "max_sim":
-                self.opt_q[k] = max_leaf.likelihood(total)
-            if self.policy == "descent_spec":
-                self.opt_q[k] = self.tree_descent_outcome.likelihood(total)
+         alg.tmpParameters = alg.pessimisticParameters
+         alg.results[999] = self.pes_res[alg]
+         self.sampler.simulations(self.__totalSimulations)
+         pes_likelihood = max_leaf.likelihood(self.__totalSimulations) 
+         alg.tmpParameters = alg.sampledParameters
+         del alg.results[999]
 
-            self.sampler.simulations(self.__totalSimulations, alg, pess_sum)
-            if self.policy == "max_sim":
-                self.pess_q[k] = max_leaf.likelihood(total)
-            if self.policy == "descent_spec":
-                self.pess_q[k] = self.tree_descent_outcome.likelihood(total)
+         print(self.likelihood,opt_likelihood,pes_likelihood)
+         volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)
+         if volatility > max_volatility:
+           max_volatility = volatility
+           best_strategy = alg
 
-        self.max_opt=0.0
-        self.min_pes=1000.0
-        for k in self._tree_descent_strategies:
-            alg = self._tree_descent_strategies[k]
-            if alg.isCompleted:
-                continue
-            self.amplitude[k] = max(abs(original_likelihood - self.opt_q[k]), abs(original_likelihood - self.pess_q[k]))
-            if(max(self.opt_q[k],self.pess_q[k]) > self.max_opt): self.max_opt=max(self.opt_q[k],self.pess_q[k])
-            if(max(self.opt_q[k],self.pess_q[k]) < self.min_pes): self.min_pes=min(self.opt_q[k],self.pess_q[k])
+         if max(self.likelihood,opt_likelihood,pes_likelihood)>self.max_like:
+           self.max_like = max(self.likelihood,opt_likelihood,pes_likelihood)
 
-        if len(self.amplitude):
-            max_key = max(self.amplitude, key=self.amplitude.get)
-            return self._tree_descent_strategies[max_key]
-        else:
-            return None
-
+         if min(self.likelihood,opt_likelihood,pes_likelihood)<self.min_like:
+           self.min_like = min(self.likelihood,opt_likelihood,pes_likelihood)     
+      
+      return best_strategy
+       
     def _toogle_anytime():
         self.anytime = not self.anytime
 

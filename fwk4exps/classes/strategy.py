@@ -35,11 +35,11 @@ class Strategy(object):
             for key in new_params:
                 params[key] = new_params[key]
 
-            strategy_hash = hash((pathExe, __args, name)+tuple(params.values()))
+            strategy_string = pathExe + __args + name + str(tuple(params.values()))
             
-            if strategy_hash in cls.strategy_instance_dict:
+            if strategy_string in cls.strategy_instance_dict:
                 # print("there was already a copy")
-                return cls.strategy_instance_dict[strategy_hash]
+                return cls.strategy_instance_dict[strategy_string]
             else:
                 # print("creating copy instance")
                 instance.name = name
@@ -49,39 +49,45 @@ class Strategy(object):
 
                 instance.results = dict()
                 instance.sampledParameters = []
+                instance.optimisticParameters = []
+                instance.pessimisticParameters = []
                 instance.lastInstanceIndex = -1
                 instance.total = None
                 instance.range = None
                 instance.isCompleted = False
                 instance.needs_to_be_sampled = False
 
-                cls.strategy_instance_dict[strategy_hash] = instance
+                cls.strategy_instance_dict[strategy_string] = instance
         else:
             name = args[0]
             pathExe = args[1]
             __args = args[2]
             params = args[3]
             # print("name {0} pathexe {1} args {2} params {3}".format(name, pathExe, __args, params))
-            strategy_hash = hash((pathExe, __args, name)+tuple(params.values()))
-            print(strategy_hash)
-            if strategy_hash in cls.strategy_instance_dict:
+            strategy_string = pathExe + __args + name + str(tuple(params.values()))
+            print(strategy_string)
+
+            if strategy_string in cls.strategy_instance_dict:
                 print("strategy found")
-                return cls.strategy_instance_dict[strategy_hash]
+                return cls.strategy_instance_dict[strategy_string]
             else:
                 print("creating strategy")
+                #input()
                 instance.name = name
                 instance.pathExe = pathExe
                 instance.args = __args
                 instance.params = params
                 instance.results = dict()
                 instance.sampledParameters = []
+                instance.optimisticParameters = []
+                instance.pessimisticParameters = []
                 instance.lastInstanceIndex = -1
                 instance.total = None
                 instance.range = None
                 instance.isCompleted = False
                 instance.needs_to_be_sampled = False
                 instance.load_global_results()
-                cls.strategy_instance_dict[strategy_hash] = instance
+                cls.strategy_instance_dict[strategy_string] = instance
                 print("strategy dict: ")
                 print(cls.strategy_instance_dict)
 
@@ -151,7 +157,7 @@ class Strategy(object):
         manager = multiprocessing.Manager()
         return_dict = manager.dict()
         jobs = []
-        for i in range(1, cpu_count):
+        for i in range(0, cpu_count):
             instance_index = self.selectInstance()
             instance = instances[instance_index]
             p = multiprocessing.Process(target=self.run2, args=(instance, instance_index, pifile, return_dict))
@@ -189,42 +195,6 @@ class Strategy(object):
 
     def result_list(self):
         return list(self.results.values())
-
-    def randomSampledParameters(self): 
-        #if len(self.sampledParameters) ==0: self.sampleParameters()
-        index = random.randint(0, len(self.sampledParameters[0])-1)
-        return self.sampledParameters[0][index], self.sampledParameters[1][index]
-
-    def sampleParameters(self):
-        # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
-        # print(data)
-        data = self.result_list()
-        # print("sampling parameters given data")
-        np.random.seed(123)
-
-        # extracted means and sigmas from
-        __medias = []
-        __sigmas = [] 
-        # with suppress_stdout:
-        with pm.Model():
-            mu = pm.Normal('mu', np.mean(data), 1)
-            sigma = pm.Uniform('sigma', lower=0.001, upper=1)
-
-            returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
-
-            step = pm.Metropolis()
-            trace = pm.sample(1000, step, cores=2, progressbar=True)
-
-            for t in trace:
-                __medias.append(t["mu"])
-                __sigmas.append(t["sigma"])
-        ret = __medias, __sigmas
-        #print("#########__________############")
-        #print("lenght of sampled Parameters:")
-        #print(len(ret[0]))
-        #print("#########__________############")
-        # return ret
-        self.sampledParameters = ret
 
     def to_file(self):
         pass
