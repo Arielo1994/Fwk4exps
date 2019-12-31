@@ -134,7 +134,7 @@ class Strategy(object):
         #     args = args.replace(k, str(v))
         args = self.args.format(**self.params)
 
-        commando = self.pathExe + " .." + instance.rstrip() + " " + args
+        commando = self.pathExe + " " + instance.rstrip() + " " + args
         print("comando:", commando)
         output = subprocess.getoutput(commando)
         output = output.splitlines()

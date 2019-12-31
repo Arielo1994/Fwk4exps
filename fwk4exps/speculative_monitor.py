@@ -13,6 +13,7 @@ import datetime
 import os
 import hashlib
 import numpy as np
+import statistics
 
 
 class SpeculativeMonitor(object):
@@ -122,7 +123,7 @@ class SpeculativeMonitor(object):
             best_alg = self._select_strategy2(probable_leaf)
             if best_alg is not None:
                 self._execute(best_alg)
-                self._save_results(probable_leaf)
+                self._save_results(probable_leaf, best_alg)
             else:
                 break
             print("loop end")
@@ -300,16 +301,21 @@ class SpeculativeMonitor(object):
             alg.addResult(k, return_dict[k])
         alg.needs_to_be_sampled = True
 
-    def _save_results(self, max_leaf):
+    def _save_results(self, max_leaf, best_alg):
         with open("results/"+self.experiment_hash+"/results.txt", "a+") as res:
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
             print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output)
-            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output)
+            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output + "," + str(best_alg.params.values()))
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
               res.write( str(alg.lastInstanceIndex) + " ")
+
+            for k in Strategy.strategy_instance_dict:
+              alg = Strategy.strategy_instance_dict[k]  
+              res.write( str(statistics.mean(alg.results.values())) + " ")
+
             res.write("\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
         #a=input("Terminar?")
@@ -327,6 +333,7 @@ class SpeculativeMonitor(object):
       for k in self._tree_descent_strategies:
          alg = self._tree_descent_strategies[k]
          if alg.isCompleted: continue
+         
          alg.tmpParameters = alg.optimisticParameters
          alg.results[999] = self.opt_res[alg]
          self.sampler.simulations(self.__totalSimulations)
@@ -339,16 +346,13 @@ class SpeculativeMonitor(object):
          alg.tmpParameters = alg.sampledParameters
          del alg.results[999]
 
-         print(self.likelihood,opt_likelihood,pes_likelihood)
+         print(str(alg.params.values()), self.likelihood,opt_likelihood,pes_likelihood)
+         input()
          volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)
          if volatility > max_volatility:
            max_volatility = volatility
            best_strategy = alg
-
-         if max(self.likelihood,opt_likelihood,pes_likelihood)>self.max_like:
            self.max_like = max(self.likelihood,opt_likelihood,pes_likelihood)
-
-         if min(self.likelihood,opt_likelihood,pes_likelihood)<self.min_like:
            self.min_like = min(self.likelihood,opt_likelihood,pes_likelihood)     
       
       return best_strategy
