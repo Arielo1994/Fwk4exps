@@ -15,7 +15,7 @@ class Strategy(object):
     permutation_folder = None
 
     def __new__(cls, *args, **kwargs):
-        print("__new__ method")
+        #print("__new__ method")
         instance = super(Strategy, cls).__new__(cls)
         if 'original' in kwargs:
             #print("copying strategy")
@@ -65,13 +65,13 @@ class Strategy(object):
             params = args[3]
             # print("name {0} pathexe {1} args {2} params {3}".format(name, pathExe, __args, params))
             strategy_string = pathExe + __args + name + str(tuple(params.values()))
-            print(strategy_string)
+            # print(strategy_string)
 
             if strategy_string in cls.strategy_instance_dict:
-                print("strategy found")
+                # print("strategy found")
                 return cls.strategy_instance_dict[strategy_string]
             else:
-                print("creating strategy")
+                # print("creating strategy")
                 #input()
                 instance.name = name
                 instance.pathExe = pathExe
@@ -93,8 +93,8 @@ class Strategy(object):
 
         return instance
 
-    def __init__(self, name=None, pathExe=None, args=None, params=None, original=None, new_params=None, new_name=None):
-        print("__init__ method")
+    #def __init__(self, name=None, pathExe=None, args=None, params=None, original=None, new_params=None, new_name=None):
+        # print("__init__ method")
         #print("succesfully created Strategy")
 
     def to_string(self):
@@ -120,7 +120,7 @@ class Strategy(object):
         aux = copy.copy(PI)
         # print("aux:", aux)
         aux = aux.split('/')
-        print("aux", aux)
+        # print("aux", aux)
         aux.pop()
         if len(aux)>0 :
           aux.pop(0)
@@ -201,10 +201,10 @@ class Strategy(object):
 
     def load_global_results(self):
         # revisar si existe archivo de esta estrategia
-        print("load_global_results")
+        # print("load_global_results")
         # print("permutation folder:", self.permutation_folder)
         path = "results/{}/strategies/{}.txt".format(self.permutation_folder, self.md5_hash())
-        print("path:", path)
+        # print("path:", path)
         if os.path.isfile(path):
             # print("bbbbb")
             # si existe, leer linea por linea y añadir resultado

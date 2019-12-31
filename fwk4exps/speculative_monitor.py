@@ -55,7 +55,7 @@ class SpeculativeMonitor(object):
         self.policy = policy
         self.tree_desc_likelihood = 0
         self.max_sim_likelihood = 0
-        self._tree_descent_strategies = {}
+        self._tree_descent_strategies = set()
         self.execution_num = 0
         self.opt_res = {}
         self.pes_res = {}
@@ -137,15 +137,15 @@ class SpeculativeMonitor(object):
         llegar a un nodo hoja """
         print("######start_tree_descent########")
         self.__msg = []
-        self._tree_descent_strategies = {}
+        self._tree_descent_strategies.clear()
         if self.tree.root is None:
             print("raiz no existe, creando")
             self.tree.set_root(self._retrieve_node())
         node = self.tree.root
         print("raiz:", node)
         while True:
-            self._tree_descent_strategies[hash(node.alg1)] = node.alg1
-            self._tree_descent_strategies[hash(node.alg2)] = node.alg2
+            self._tree_descent_strategies.add(node.alg1)
+            self._tree_descent_strategies.add(node.alg2)
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
                 self.__msg.append(0)
                 node.add_left(self._retrieve_node())
@@ -243,12 +243,12 @@ class SpeculativeMonitor(object):
         raise ValueError
 
     def _update_likelihood(self):
-        print("#############################################################")
-        print("diccionario de estrategias:", Strategy.strategy_instance_dict)
-        print("#############################################################")
+        #print("#############################################################")
+        #print("diccionario de estrategias:", Strategy.strategy_instance_dict)
+        #print("#############################################################")
  
  
-        print("passing info")
+        #print("passing info")
         self.sampler.pass_info(self.tree,Strategy.strategy_instance_dict,self.instances)
 
 
@@ -330,8 +330,8 @@ class SpeculativeMonitor(object):
       self.max_like=0.0
       self.min_like=1000.0
 
-      for k in self._tree_descent_strategies:
-         alg = self._tree_descent_strategies[k]
+      for alg in self._tree_descent_strategies:
+         print(str(alg.params.values()))
          if alg.isCompleted: continue
          
          alg.tmpParameters = alg.optimisticParameters
@@ -347,7 +347,6 @@ class SpeculativeMonitor(object):
          del alg.results[999]
 
          print(str(alg.params.values()), self.likelihood,opt_likelihood,pes_likelihood)
-         input()
          volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)
          if volatility > max_volatility:
            max_volatility = volatility

@@ -96,7 +96,7 @@ class Sampler(object):
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
             step = pm.Metropolis()
-            trace = pm.sample(1000, step, cores=2, progressbar=True, tune=2000)
+            trace = pm.sample(250, step, cores=4, progressbar=True, tune=500)
 
             for t in trace:
                 __medias.append(t["mu"])
