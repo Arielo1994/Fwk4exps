@@ -14,22 +14,22 @@ class TraceBackInfo(object):
         en un string que se retorna para formar la llave del
         nodo.
         """
-        print("getexperiment info")
+        #print("getexperiment info")
         #  ----------Traceback info:
         extracted_list = traceback.extract_stack()
         formated_traceback_list = traceback.format_list(extracted_list)
         #  ----------Formated traceback list
         important_line = formated_traceback_list[-3]
-        print("important_line:")
-        print(important_line)
-        print("line_no:")
+        #print("important_line:")
+        #print(important_line)
+        #print("line_no:")
         line_no = extracted_list[-3][1]
-        print(line_no)
+        #print(line_no)
 
-        print("local variables from experimentalDesign:")
+        #print("local variables from experimentalDesign:")
         call_frame = sys._getframe(2)
         eval_locals = call_frame.f_locals
-        print(eval_locals)
+        #print(eval_locals)
 
         return_str = str(line_no)+str(eval_locals)
 

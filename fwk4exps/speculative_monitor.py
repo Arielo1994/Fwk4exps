@@ -14,7 +14,7 @@ import os
 import hashlib
 import numpy as np
 import statistics
-
+import random
 
 class SpeculativeMonitor(object):
     """
@@ -32,7 +32,7 @@ class SpeculativeMonitor(object):
         self.experimental_design = None
         self.instances = None
         self.global_results = None
-        self.__totalSimulations = 5000
+        self.__totalSimulations = 1000
         self.iteration = 1
         # self.__numOfExecutions = 0
         self.s2id = {}
@@ -59,6 +59,9 @@ class SpeculativeMonitor(object):
         self.execution_num = 0
         self.opt_res = {}
         self.pes_res = {}
+        self.simul_mean = {}
+        self.simulation_mode = False
+        
         if cpu_count is None:
             self.cpu_count = multiprocessing.cpu_count()
 
@@ -148,9 +151,11 @@ class SpeculativeMonitor(object):
             self._tree_descent_strategies.add(node.alg2)
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
                 self.__msg.append(0)
+                #preguntar si tiene hijo izquierdo no?
                 node.add_left(self._retrieve_node())
                 if node.left.is_leaf == True:
                     self.tree_descent_outcome = node.left
+                    self.probable_output = self.output
                     node.msg = self.__msg
                     return node.left
                 node = node.left
@@ -159,6 +164,7 @@ class SpeculativeMonitor(object):
                 node.add_right(self._retrieve_node())
                 if node.right.is_leaf == True:
                     self.tree_descent_outcome = node.right
+                    self.probable_output = self.output
                     node.msg = self.__msg
                     return node.right
                 node = node.right
@@ -222,6 +228,16 @@ class SpeculativeMonitor(object):
         lo crea si no existe
         y vuelve a retrieve node
         """
+        if self.simulation_mode == True:
+          if (S1 not in self.simul_mean) or (S2 not in self.simul_mean):
+             self.output = None
+             raise ValueError
+             
+          if  self.simul_mean[S1] > self.simul_mean[S2]:
+             return S1
+          else:
+             return S2
+        
         print("comparing strategies")
         print (self.__count, self.__msg)
         if self.__count < len(self.__msg):
@@ -257,19 +273,27 @@ class SpeculativeMonitor(object):
             if alg.needs_to_be_sampled:
                print("sampling summary:")
                data = alg.result_list()
-               alg.sampledParameters = Sampler.sampleParameters(data)
-               alg.tmpParameters = alg.sampledParameters 
-               self.opt_res[alg], self.pes_res[alg] = self.sampler.sampledSum(alg, 95, 5, 1)
-               
-               data.append(self.opt_res[alg])
-               alg.optimisticParameters = Sampler.sampleParameters(data)
-               data.pop()
-               
-               data.append(self.pes_res[alg])
-               alg.pessimisticParameters = Sampler.sampleParameters(data)
-               data.pop()
-               alg.needs_to_be_sampled = False   
-               #print(data,opt_res,pes_res)                          
+               #alg.sampledParameters = Sampler.sampleParameters(data)
+               #alg.tmpParameters = alg.sampledParameters 
+							 #self.opt_res[alg], self.pes_res[alg] = self.sampler.sampledSum(alg, 95, 5, 1)
+               alg.simul_sums, self.opt_res[alg], self.pes_res[alg] = Sampler.sample_means(data, len(self.instances)-len(data), True)
+               print(self.opt_res[alg], self.pes_res[alg])
+               alg.tmp_sums = alg.simul_sums
+
+               n= min(1,len(self.instances)-len(data))
+               datab = [self.opt_res[alg]]*n          
+               data.extend(datab)
+               #alg.optimisticParameters = Sampler.sampleParameters(data)
+               alg.optimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
+               for i in range(0,n): data.pop()
+
+               datab = [self.pes_res[alg]]*n                
+               data.extend(datab)
+               #alg.pessimisticParameters = Sampler.sampleParameters(data)
+               alg.pessimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
+               for i in range(0,n): data.pop()
+               alg.needs_to_be_sampled = False    
+               print(np.mean(alg.simul_sums),np.mean(alg.optimistic_sums),np.mean(alg.pessimistic_sums))                    
 
 
 
@@ -289,6 +313,7 @@ class SpeculativeMonitor(object):
                 alg.isCompleted = True
                 break
             instance = self.instances[instance_index]
+            print(alg.run2)
             p = multiprocessing.Process(target=alg.run2, args=(instance, instance_index, self.pifile, return_dict))
             jobs.append(p)
         for p in jobs:
@@ -306,24 +331,49 @@ class SpeculativeMonitor(object):
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output)
-            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.output + "," + str(best_alg.params.values()))
+            print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output)
+            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output + "," + str(best_alg.params.values()))
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
               res.write( str(alg.lastInstanceIndex) + " ")
 
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
-              res.write( str(statistics.mean(alg.results.values())) + " ")
+              if len(alg.results.values())>0:
+                res.write( str(statistics.mean(alg.results.values())) + " ")
 
             res.write("\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
         #a=input("Terminar?")
         #if a=="s": sys.exit()
 
+    
+
+    def simulations(self, total):
+      self.simulation_mode = True
+      
+      count = 0
+      for x in range(total):
+        self.simul_mean.clear()
+        
+        for alg in self._tree_descent_strategies:
+            #mcmc_sampl_mean, mcmc_sampl_sd = Sampler.randomParameters(alg.tmpParameters)
+            #self.simul_mean[alg] = Sampler.simul_mean(alg, len(self.instances), mean=mcmc_sampl_mean, sd=mcmc_sampl_sd)  
+            self.simul_mean[alg] = alg.tmp_sums[random.randrange(0, len(alg.tmp_sums))]
+            
+        try:
+           self.output=""
+           self.experimental_design()
+        except ValueError as x:
+           if self.output==self.probable_output:
+              count +=1
+              
+      self.simulation_mode = False
+      return count/total
+        
+
     def _select_strategy2(self, max_leaf):
-      self.sampler.simulations(self.__totalSimulations)
-      self.likelihood = max_leaf.likelihood(self.__totalSimulations)
+      self.likelihood = self.simulations(self.__totalSimulations)
 
       max_volatility = -0.1
       best_strategy = None
@@ -334,17 +384,18 @@ class SpeculativeMonitor(object):
          print(str(alg.params.values()))
          if alg.isCompleted: continue
          
-         alg.tmpParameters = alg.optimisticParameters
-         alg.results[999] = self.opt_res[alg]
-         self.sampler.simulations(self.__totalSimulations)
-         opt_likelihood = max_leaf.likelihood(self.__totalSimulations)
+         #alg.tmpParameters = alg.optimisticParameters
+         alg.tmp_sums = alg.optimistic_sums
+         #alg.results[999] = self.opt_res[alg]
+         opt_likelihood = self.simulations(self.__totalSimulations)
 
-         alg.tmpParameters = alg.pessimisticParameters
-         alg.results[999] = self.pes_res[alg]
-         self.sampler.simulations(self.__totalSimulations)
-         pes_likelihood = max_leaf.likelihood(self.__totalSimulations) 
-         alg.tmpParameters = alg.sampledParameters
-         del alg.results[999]
+         #alg.tmpParameters = alg.pessimisticParameters
+         alg.tmp_sums = alg.pessimistic_sums
+         #alg.results[999] = self.pes_res[alg]
+         pes_likelihood = self.simulations(self.__totalSimulations)
+         #alg.tmpParameters = alg.sampledParameters
+         alg.tmp_sums = alg.simul_sums
+         #del alg.results[999]
 
          print(str(alg.params.values()), self.likelihood,opt_likelihood,pes_likelihood)
          volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)

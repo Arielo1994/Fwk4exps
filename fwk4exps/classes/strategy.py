@@ -48,9 +48,15 @@ class Strategy(object):
                 instance.params = params
 
                 instance.results = dict()
-                instance.sampledParameters = []
-                instance.optimisticParameters = []
-                instance.pessimisticParameters = []
+                #instance.sampledParameters = []
+                #instance.optimisticParameters = []
+                #instance.pessimisticParameters = []
+                
+                instance.simul_sums = []
+                instance.optimistic_sums = []
+                instance.pessimistic_sums = []
+                instance.tmp_sums = []
+                
                 instance.lastInstanceIndex = -1
                 instance.total = None
                 instance.range = None
@@ -78,9 +84,15 @@ class Strategy(object):
                 instance.args = __args
                 instance.params = params
                 instance.results = dict()
-                instance.sampledParameters = []
-                instance.optimisticParameters = []
-                instance.pessimisticParameters = []
+                #instance.sampledParameters = []
+                #instance.optimisticParameters = []
+                #instance.pessimisticParameters = []
+
+                instance.simul_sums = []
+                instance.optimistic_sums = []
+                instance.pessimistic_sums = []
+                instance.tmp_sums = []
+
                 instance.lastInstanceIndex = -1
                 instance.total = None
                 instance.range = None

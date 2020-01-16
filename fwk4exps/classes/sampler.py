@@ -17,45 +17,23 @@ class Sampler(object):
         # self.parameters_algos = parameters_algos
 
     def simulations(self, total, __alg=None, sampl_alg_sum=None):
-
+        n_instances = self.tree.root.total_instances  
         self.tree.refreshSimulations()
+        for x in range(total):
+            for k in self.algoritmos:
+                alg = self.algoritmos[k]
+                mcmc_sampl_mean[alg], mcmc_sampl_sd[alg] = Sampler.randomParameters(alg.tmpParameters)
+                simul_mean[alg] = Sampler.simul_mean(alg, n_instances, mean=mcmc_sampl_mean, sd=mcmc_sampl_sd)
+            self.simulation(simul_mean)
 
-        mcmc_sampl_mean = dict()
-        mcmc_sampl_sd = dict()
-        if sampl_alg_sum:
-            # print("simulaciones sesgadas")
-            
-            for x in range(total):
-                for k in self.algoritmos:
-                    alg = self.algoritmos[k]
-                    mcmc_sampl_mean[alg], mcmc_sampl_sd[alg] = Sampler.randomParameters(alg.tmpParameters)
-                self.simulation(mcmc_sampl_mean, mcmc_sampl_sd, __alg, sampl_alg_sum)
-        else:
-            # print("simulaciones no sesgadas:")
-            for x in range(total):
-                for k in self.algoritmos:
-                    alg = self.algoritmos[k]
-                    mcmc_sampl_mean[alg], mcmc_sampl_sd[alg] = Sampler.randomParameters(alg.tmpParameters)
-                self.simulation(mcmc_sampl_mean, mcmc_sampl_sd)
-
-    def simulation(self, mcmc_sampl_mean, mcmc_sampl_sd, __alg=None, sampl_alg_sum=None):
+    def simulation(self, simul_mean, __alg=None, sampl_alg_sum=None):
         n = self.tree.root
-        simul_mean = {}
         while n is not None:
             n.addSimulationVisit()
             if n.is_leaf == False:
-              total = n.total_instances
-              if n.alg1 not in simul_mean:
-                simul_mean[n.alg1] = self.simul_mean(n.alg1, total, mean=mcmc_sampl_mean[n.alg1], sd=mcmc_sampl_sd[n.alg1])
-              
-              if n.alg2 not in simul_mean:
-                simul_mean[n.alg2] = self.simul_mean(n.alg2, total, mean=mcmc_sampl_mean[n.alg2], sd=mcmc_sampl_sd[n.alg2])                       
-              
-              simulated_mean1 = simul_mean[n.alg1]
-              simulated_mean2 = simul_mean[n.alg2]
-              #print("compare:",simulated_mean1,simulated_mean2)
+              total = n.total_instances     
 
-              if simulated_mean1 - n.delta_sig > simulated_mean2:
+              if simul_mean[n.alg1] > simul_mean[n.alg2]:
                   #n.p1 = n.p1+1
                   n = n.left
               else:
@@ -90,6 +68,32 @@ class Sampler(object):
         __sigmas = [] 
         # with suppress_stdout:
         with pm.Model():
+            mu = pm.Normal('mu', np.mean(data), 20)
+            sigma = pm.Uniform('sigma', lower=0.001, upper=20)
+
+            returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
+
+            step = pm.Metropolis()
+            trace = pm.sample(250, step, cores=4, progressbar=True, tune=500, chains=1)
+
+            for t in trace:
+                __medias.append(t["mu"])
+                __sigmas.append(t["sigma"])
+        ret = __medias, __sigmas
+
+        return ret
+        
+    @staticmethod
+    def sample_means(data, c, perc=False):
+        # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
+        # print(data)
+        # print("sampling parameters given data")
+        np.random.seed(123)
+
+        means = [] 
+        sample = []
+        # with suppress_stdout:
+        with pm.Model():
             mu = pm.Normal('mu', np.mean(data), 1)
             sigma = pm.Uniform('sigma', lower=0.001, upper=2)
 
@@ -99,11 +103,18 @@ class Sampler(object):
             trace = pm.sample(250, step, cores=4, progressbar=True, tune=500)
 
             for t in trace:
-                __medias.append(t["mu"])
-                __sigmas.append(t["sigma"])
-        ret = __medias, __sigmas
+                __sum = np.random.normal(c * t["mu"], np.sqrt(c) * t["sigma"])
+                if perc: sample.append(np.random.normal(t["mu"], t["sigma"]))
+                mean = (sum(data) + __sum)/(len(data)+c)
+                means.append(mean)
+                
+            if perc: 
+              sample.sort()
+              pes_res = sample[(len(sample)*5)//100]
+              opt_res = sample[(len(sample)*95)//100]     
+              return means, pes_res, opt_res
 
-        return ret
+        return means
 
 
     def sampledSum(self, alg, alpha=None, beta=None, c=None):
@@ -124,7 +135,8 @@ class Sampler(object):
             randomIndex = np.random.randint(len(medias))
             return medias[randomIndex], sigmas[randomIndex]
 
-    def simul_mean(self, alg, total, compl_sum=None, sd=None, mean=None):
+    @staticmethod
+    def simul_mean(alg, total, compl_sum=None, sd=None, mean=None):
         # print("simulando media para comparar")
         if compl_sum:
             mean = (sum(alg.result_list()) + compl_sum)/total*1.0

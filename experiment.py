@@ -20,35 +20,40 @@ def factorial_design(S, *values, param_names=[]):
   return S
       
 
-def parameter_tuning(S, param_values):
-  original_value = S.params[param]
+def parameter_tuning(S, param, param_values):
   params = S.params.copy()
   for value in param_values:
     params[param]=value
-    if original_value == value: 
-      continue
-    else: 
-       S2 = fwk.Strategy(S.name, S.pathExe, S.args, params)
+    S2 = fwk.Strategy(S.name, S.pathExe, S.args, params)
     S = f4e.bestStrategy(S, S2)
   return S
 
 def experimentalDesign():
-    print("experimental design")
     S = fwk.Strategy('opt_test', 'python opt_test.py', '{x} {y}', {"x": -1.0, "y": -1.0})
     S = parameter_tuning(S, "x", [-1.0, 0.0, 1.0])
     S = parameter_tuning(S, "y", [-1.0, 0.0, 1.0])
     
-    f4e.output = S.name + " " + str(tuple(S.params.values())) + " "
+    f4e.output = S.name + " " + str(tuple(S.params.values())) 
 
     f4e.terminate()
 
 def experimentalDesign2():
-    print("experimental design2")
     S = fwk.Strategy('opt_test', 'python opt_test.py', '{x} {y}', {"x": -1.0, "y": -1.0})
     S = factorial_design(S, [-1.0, -0.5, 0.0, 0.5, 1.0], [-1.0, -0.5, 0.0, 0.5, 1.0], param_names=["x","y"])
     
-    f4e.output = S.name + " " + str(tuple(S.params.values())) + " "
+    f4e.output = S.name + " " + str(tuple(S.params.values())) 
+
+    f4e.terminate()
+    
+def bsg_clp():
+    S = fwk.Strategy('opt_test', './BSG_CLP', '--alpha={a} --beta={b} --gamma={c} -p {p} -t 30', {'a':0.0, 'b':0.0, 'c':0.0, 'p':0.0})
+    S = parameter_tuning(S, 'a', [1.0, 2.0, 4.0, 8.0])
+    S = parameter_tuning(S, 'b', [1.0, 2.0, 4.0, 8.0])
+    S = parameter_tuning(S, 'c', [0.1, 0.2, 0.3, 0.4])
+    S = parameter_tuning(S, 'p', [0.01, 0.02, 0.03, 0.04])
+    
+    f4e.output = S.name + " " + str(tuple(S.params.values())) 
 
     f4e.terminate()
 
-f4e.speculative_execution(experimentalDesign2, 'instances.txt')
+f4e.speculative_execution(bsg_clp, 'instancesCLP-shuf.txt')
