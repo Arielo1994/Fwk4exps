@@ -61,6 +61,9 @@ class SpeculativeMonitor(object):
         self.pes_res = {}
         self.simul_mean = {}
         self.simulation_mode = False
+
+        self.state_counter = {} #contador de simulaciones por estado
+        self.most_probable_state = None
         
         if cpu_count is None:
             self.cpu_count = multiprocessing.cpu_count()
@@ -121,9 +124,15 @@ class SpeculativeMonitor(object):
         print("start_speculative_execution")
         while True:
             print("loop begin")
+            # Se baja en el árbol siguiendo la ruta más probable
             probable_leaf = self._tree_descent()
+
+             # Aquí se samplean sumas para las estrategias (normal, opt, pes)
             self._update_likelihood()
-            best_alg = self._select_strategy2(probable_leaf)
+            
+            #Aquí se realizan las simulaciones (usando las sumas)
+            best_alg = self._select_strategy2(probable_leaf) 
+
             if best_alg is not None:
                 self._execute(best_alg)
                 self._save_results(probable_leaf, best_alg)
@@ -229,10 +238,21 @@ class SpeculativeMonitor(object):
         y vuelve a retrieve node
         """
         if self.simulation_mode == True:
+          state = TraceBackInfo.getExperimentState()
+          
+          if state in  self.state_counter:
+            self.state_counter[state] += 1
+            #only when the state reach the 50\% (in this way the latest state
+            #surpassing this value will be saved) 
+            if  self.state_counter[state] == self.__totalSimulations/2:
+               self.most_probable_state=state
+          else:
+             self.state_counter[state] = 1
+           
+
           if (S1 not in self.simul_mean) or (S2 not in self.simul_mean):
              self.output = None
              raise ValueError
-             
           if  self.simul_mean[S1] > self.simul_mean[S2]:
              return S1
           else:
@@ -258,6 +278,34 @@ class SpeculativeMonitor(object):
 
         raise ValueError
 
+    def terminate(self):
+        """
+        se cuenta el estado final como si se tratara de un estado más
+        """
+
+        state = TraceBackInfo.getExperimentState()
+          
+        if state in  self.state_counter:
+            self.state_counter[state] += 1
+            #only when the state reach the 50\% (in this way the latest state
+            #surpassing this value will be saved) 
+            if self.state_counter[state] == self.__totalSimulations/2 :
+               self.most_probable_state=state
+        else:
+             self.state_counter[state] = 1
+
+        
+        experiment_state = TraceBackInfo.getExperimentState()
+        if experiment_state in self.node_dict:
+            self.__speculativeNode = self.node_dict[experiment_state]
+        else:
+            self.__speculativeNode = LeafNode(self.__msg, experiment_state)
+            self.node_dict[experiment_state] = self.__speculativeNode
+
+        raise ValueError
+        
+
+
     def _update_likelihood(self):
         #print("#############################################################")
         #print("diccionario de estrategias:", Strategy.strategy_instance_dict)
@@ -276,10 +324,13 @@ class SpeculativeMonitor(object):
                #alg.sampledParameters = Sampler.sampleParameters(data)
                #alg.tmpParameters = alg.sampledParameters 
 							 #self.opt_res[alg], self.pes_res[alg] = self.sampler.sampledSum(alg, 95, 5, 1)
+
+               #Se simulan la suma
                alg.simul_sums, self.opt_res[alg], self.pes_res[alg] = Sampler.sample_means(data, len(self.instances)-len(data), True)
                print(self.opt_res[alg], self.pes_res[alg])
                alg.tmp_sums = alg.simul_sums
 
+               #Se simula una suma optimista
                n= min(1,len(self.instances)-len(data))
                datab = [self.opt_res[alg]]*n          
                data.extend(datab)
@@ -287,6 +338,7 @@ class SpeculativeMonitor(object):
                alg.optimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
                for i in range(0,n): data.pop()
 
+               #Se simula una suma pesimista
                datab = [self.pes_res[alg]]*n                
                data.extend(datab)
                #alg.pessimisticParameters = Sampler.sampleParameters(data)
@@ -349,16 +401,18 @@ class SpeculativeMonitor(object):
 
     
 
-    def simulations(self, total):
+    def simulations(self, total, probable_state=None):
       self.simulation_mode = True
+      self.state_counter = {} # reinitialization 
+
+      if probable_state!=None:
+        self.state_counter[probable_state] = 0
       
       count = 0
       for x in range(total):
         self.simul_mean.clear()
         
         for alg in self._tree_descent_strategies:
-            #mcmc_sampl_mean, mcmc_sampl_sd = Sampler.randomParameters(alg.tmpParameters)
-            #self.simul_mean[alg] = Sampler.simul_mean(alg, len(self.instances), mean=mcmc_sampl_mean, sd=mcmc_sampl_sd)  
             self.simul_mean[alg] = alg.tmp_sums[random.randrange(0, len(alg.tmp_sums))]
             
         try:
@@ -367,13 +421,19 @@ class SpeculativeMonitor(object):
         except ValueError as x:
            if self.output==self.probable_output:
               count +=1
+
+      if probable_state != None:
+         count = self.state_counter[probable_state]
               
       self.simulation_mode = False
+
       return count/total
         
 
     def _select_strategy2(self, max_leaf):
       self.likelihood = self.simulations(self.__totalSimulations)
+      self.likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
+      probable_state = self.most_probable_state #always should be some state
 
       max_volatility = -0.1
       best_strategy = None
@@ -387,12 +447,12 @@ class SpeculativeMonitor(object):
          #alg.tmpParameters = alg.optimisticParameters
          alg.tmp_sums = alg.optimistic_sums
          #alg.results[999] = self.opt_res[alg]
-         opt_likelihood = self.simulations(self.__totalSimulations)
+         opt_likelihood = self.simulations(self.__totalSimulations, probable_state=probable_state)
 
          #alg.tmpParameters = alg.pessimisticParameters
          alg.tmp_sums = alg.pessimistic_sums
          #alg.results[999] = self.pes_res[alg]
-         pes_likelihood = self.simulations(self.__totalSimulations)
+         pes_likelihood = self.simulations(self.__totalSimulations, probable_state=probable_state)
          #alg.tmpParameters = alg.sampledParameters
          alg.tmp_sums = alg.simul_sums
          #del alg.results[999]
@@ -431,98 +491,3 @@ class SpeculativeMonitor(object):
         print("curr_quality", ret)
         return ret
 
-    def terminate(self):
-        """
-        llegado el final del experimento se crea un nodo hoja que tiene como
-        identificador el estado final del experimento.
-        """
-
-        experiment_state = TraceBackInfo.getExperimentState()
-        if experiment_state in self.node_dict:
-            self.__speculativeNode = self.node_dict[experiment_state]
-        else:
-            self.__speculativeNode = LeafNode(self.__msg, experiment_state)
-            self.node_dict[experiment_state] = self.__speculativeNode
-
-        raise ValueError
-                
-
-    """ funciones para agregar mas adelante"""
-    #!----------------------------------------------------
-    
-    
-    # def best_param_value(self):
-    #     pass
-
-    #!----------------------------------------------------
-
-
-    # def bestParam(S0, param, values, pi, delta):
-    #     SList = []
-    #     for p in values:
-    #         #  ---------------- crea copia de la estrategia
-    #         S = Strategy(original=S0, new_params={param: p})
-    #         #  -----------------S.params[param]=p
-    #         S.name = 'Algo-'+param+"="+str(p)
-    #         SList.append(S)
-
-    #     Sbest = S0
-    #     for S in SList:
-    #         Sbest = bestStrategy(Sbest, S, pi, delta)
-    #         if Sbest is not S0 : delta = 0.0
-    #     return Sbest
-
-    #!----------------------------------------------------
-
-
-    # def run():
-    #     print("welcome")
-    #     #  -------------- Generar orden de instances
-
-    #     self.instances = readData(pifile)
-    #     #  -------------- Ejecucion
-    #     plot_proc = multiprocessing.Process(target=plotter_function, args=())
-    #     plot_proc.start()
-    #     speculativeExecute()
-    #     plot_proc.join()
-
-    #!----------------------------------------------------
-
-    #!----------------------------------------------------
-    # def _execute(self, strategies):
-    #     """ejecuta la lista de estrategias y actualiza
-    #      los resutados globales"""
-    #     print("#######start_execute##########")
-    #     # print(alg.toString())
-    #     # global instancias,__numOfExecutions,pifile,algoritmos
-    #     manager = multiprocessing.Manager()
-    #     return_dict = manager.dict()
-    #     jobs = []
-    #     numproc = self.cpu_count
-
-    #     for j in range(numproc):
-    #         i = alg.selectInstance()
-    #         print("selected instance to run:")
-    #         print(i)
-    #         if i==None:
-    #             alg.isCompleted = True#algoritmos.pop(mapa(alg))
-    #             break
-    #         instancia = instancias[i]
-    #         p = multiprocessing.Process(target=alg.run2, args=(instancia,i,pifile,return_dict))
-    #         jobs.append(p)
-            
-    #     # for p in jobs:
-    #     #     p.start()    
-    #     # for p in jobs:
-    #     #     p.join()
-    #     #     __numOfExecutions = __numOfExecutions + 1
-    #     # keys = [key for key,value in return_dict.items()]
-    #     # #print(keys)
-    #     # for k in keys:
-    #     #     alg.addResult(k, return_dict[k])
-
-    #     # print("resultados post correr algoritmo:")
-    #     # print(alg.results)
-    #     # return True
-    #     print("#######end_execute##########")
-    #     pass

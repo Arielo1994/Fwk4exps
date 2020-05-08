@@ -1,7 +1,7 @@
 import fwk4exps.speculative_monitor as f4e
 
 
-def esperimentalDesign():
+def experimentalDesign():
 
     S = f4e.Strategy('BSG_CLP', '-a {a} -b {b} -g {g} -p {p}')
     S.params = {"a": 0.0, "b": 0.0, "g": 0.0, "p": 0.0}

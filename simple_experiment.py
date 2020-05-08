@@ -4,10 +4,11 @@ f4e = fwk.SpeculativeMonitor(cpu_count=2)
 
 bsg_path = 'python opt_test.py'
 
-
 def experimentalDesign():
     print("experimental design2")
-    params = {"x": -1.0, "y": -1.0}
+
+    S = fwk.Strategy(bsg_path, '{x} {y}')
+    S.params = {"x": -1.0, "y": -1.0}
 
     x = f4e.best_param_value(S, "x", [-1.0, -0.5, 0.0, 0.5])
     S.set_param("x", x)
