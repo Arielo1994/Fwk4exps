@@ -18,8 +18,8 @@ def parameter_tuning(S, param, param_values):
 def experimentalDesign():
     #print("experimental design2")
     S = fwk.Strategy('opt_test', 'python opt_test.py', '{x} {y}', {"x": -1.0, "y": -1.0})
-    S = parameter_tuning(S, "x", [-1.0, 0.0, 1.0])
-    S = parameter_tuning(S, "y", [-1.0, 0.0, 1.0])
+    S = parameter_tuning(S, "x", [-1.0, -0.5, 0.0, 0.5, 1.0])
+    S = parameter_tuning(S, "y", [-1.0, -0.5, 0.0, 0.5, 1.0])
     
     f4e.output = S.name + " " + str(tuple(S.params.values())) + " "
 

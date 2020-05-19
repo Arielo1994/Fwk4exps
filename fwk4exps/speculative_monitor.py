@@ -16,6 +16,7 @@ import numpy as np
 import statistics
 import random
 
+
 class SpeculativeMonitor(object):
     """
     Clase principal, ejecuta el algoritmo de ejecucion especulativa
@@ -55,6 +56,8 @@ class SpeculativeMonitor(object):
         self.policy = policy
         self.tree_desc_likelihood = 0
         self.max_sim_likelihood = 0
+        self.save_strategies = False
+        self.candidate_strategies = set()
         self._tree_descent_strategies = set()
         self.execution_num = 0
         self.opt_res = {}
@@ -96,11 +99,11 @@ class SpeculativeMonitor(object):
         self.experiment_hash = file_md5_hash
         Strategy.permutation_folder = file_md5_hash
 
-        print("Strategy.permutation_folder:", Strategy.permutation_folder)
+        #print("Strategy.permutation_folder:", Strategy.permutation_folder)
 
         # checka si existe una carpeta para este archivo de instancias
         if not os.path.exists('results/'+file_md5_hash):
-            print("creating permutation folder!")
+            #print("creating permutation folder!")
             # si no existe creo la carpeta y el archivo de permutacion
             os.makedirs('results/'+file_md5_hash+'/strategies')
             with open(self.pifile) as f:
@@ -111,7 +114,7 @@ class SpeculativeMonitor(object):
                     f.write(str(value)+"\n")
         else:
             # si existe, abro el archivo de permutacion y lo leo
-            print("loading permutation folder!")
+            #print("loading permutation folder!")
             with open("results/"+file_md5_hash+"/permutation.txt", "r") as f:
                 self.permutation = []
                 content = f.readlines()
@@ -123,9 +126,9 @@ class SpeculativeMonitor(object):
         print("##############################")
         print("start_speculative_execution")
         while True:
-            print("loop begin")
             # Se baja en el árbol siguiendo la ruta más probable
             probable_leaf = self._tree_descent()
+            print("probable_output:", self.probable_output)
 
              # Aquí se samplean sumas para las estrategias (normal, opt, pes)
             self._update_likelihood()
@@ -148,14 +151,16 @@ class SpeculativeMonitor(object):
         instances necesarias y se continua descendiendo hasta
         llegar a un nodo hoja """
         print("######start_tree_descent########")
+
         self.__msg = []
         self._tree_descent_strategies.clear()
         if self.tree.root is None:
-            print("raiz no existe, creando")
+            #print("raiz no existe, creando")
             self.tree.set_root(self._retrieve_node())
         node = self.tree.root
-        print("raiz:", node)
+        
         while True:
+            print(node)
             self._tree_descent_strategies.add(node.alg1)
             self._tree_descent_strategies.add(node.alg2)
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
@@ -180,7 +185,7 @@ class SpeculativeMonitor(object):
             
 
         print("######end_tree_descent########")
-        print("node at the end of tree_descent:", node)
+        #print("node at the end of tree_descent:", node)
 
 
     def _retrieve_node(self):
@@ -191,23 +196,24 @@ class SpeculativeMonitor(object):
         ejecuta el diseño experimental siguiendo las indicaciones del
         nodo. si ya hay un nodo similar en el arbol, ese nodo es
         retornado"""
-        print("####start_retrieve_node")
+        #print("####start_retrieve_node")
         try:
             # print("_retrieve_node_try")
             self.__count = 0
             self.__speculativeNode = None
             self.experimental_design()
         except ValueError as x:
-            print("_retrieve_node_except")
-            print(self.__speculativeNode)
+            #print("_retrieve_node_except")
+            #print(self.__speculativeNode)
+            nothing_to_do = 0
         else:
-            print("_retrieve_node_else")
+            #print("_retrieve_node_else")
             self.marcarNodo()
         #finally:
-        print("_retrieve_node_finally")
-        print("nodo especulativo despues del try except")
-        print(self.__speculativeNode)
-        print("####end_retrieve_node")
+        #print("_retrieve_node_finally")
+        #print("nodo especulativo despues del try except")
+        #print(self.__speculativeNode)
+        #print("####end_retrieve_node")
         return self.__speculativeNode
 
     def marcarNodo(self):
@@ -237,15 +243,21 @@ class SpeculativeMonitor(object):
         lo crea si no existe
         y vuelve a retrieve node
         """
+
+
         if self.simulation_mode == True:
           state = TraceBackInfo.getExperimentState()
           
-          if state in  self.state_counter:
+          if state in self.state_counter:
             self.state_counter[state] += 1
             #only when the state reach the 50\% (in this way the latest state
             #surpassing this value will be saved) 
             if  self.state_counter[state] == self.__totalSimulations/2:
                self.most_probable_state=state
+               self.most_probable_state_str = str(S1.params) + " vs " + str(S2.params)
+               if self.save_strategies == True:
+                 self.candidate_strategies.add(S1)
+                 self.candidate_strategies.add(S2)
           else:
              self.state_counter[state] = 1
            
@@ -258,8 +270,8 @@ class SpeculativeMonitor(object):
           else:
              return S2
         
-        print("comparing strategies")
-        print (self.__count, self.__msg)
+        #print("comparing strategies")
+        #print (self.__count, self.__msg)
         if self.__count < len(self.__msg):
             if self.__msg[self.__count] == 0:
                 self.__count = self.__count+1
@@ -270,11 +282,11 @@ class SpeculativeMonitor(object):
         experiment_state = TraceBackInfo.getExperimentState()
         if experiment_state in self.node_dict:
             self.__speculativeNode = self.node_dict[experiment_state]
-            print(1,self.__speculativeNode)
+            #print(1,self.__speculativeNode)
         else:
             self.__speculativeNode = Node(S1, S2, len(self.instances), 0)
             self.node_dict[experiment_state] = self.__speculativeNode
-            print(2,self.__speculativeNode)
+            #print(2,self.__speculativeNode)
 
         raise ValueError
 
@@ -291,6 +303,7 @@ class SpeculativeMonitor(object):
             #surpassing this value will be saved) 
             if self.state_counter[state] == self.__totalSimulations/2 :
                self.most_probable_state=state
+               self.most_probable_state_str = "terminal_state"
         else:
              self.state_counter[state] = 1
 
@@ -307,19 +320,14 @@ class SpeculativeMonitor(object):
 
 
     def _update_likelihood(self):
-        #print("#############################################################")
-        #print("diccionario de estrategias:", Strategy.strategy_instance_dict)
-        #print("#############################################################")
- 
- 
-        #print("passing info")
+        print("\n######start_update_likelihood########")
         self.sampler.pass_info(self.tree,Strategy.strategy_instance_dict,self.instances)
 
 
         for k in Strategy.strategy_instance_dict:
             alg = Strategy.strategy_instance_dict[k]
             if alg.needs_to_be_sampled:
-               print("sampling summary:")
+               print("sampling means:", str(alg.params))
                data = alg.result_list()
                #alg.sampledParameters = Sampler.sampleParameters(data)
                #alg.tmpParameters = alg.sampledParameters 
@@ -327,7 +335,7 @@ class SpeculativeMonitor(object):
 
                #Se simulan la suma
                alg.simul_sums, self.opt_res[alg], self.pes_res[alg] = Sampler.sample_means(data, len(self.instances)-len(data), True)
-               print(self.opt_res[alg], self.pes_res[alg])
+               #print(self.opt_res[alg], self.pes_res[alg])
                alg.tmp_sums = alg.simul_sums
 
                #Se simula una suma optimista
@@ -345,7 +353,9 @@ class SpeculativeMonitor(object):
                alg.pessimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
                for i in range(0,n): data.pop()
                alg.needs_to_be_sampled = False    
-               print(np.mean(alg.simul_sums),np.mean(alg.optimistic_sums),np.mean(alg.pessimistic_sums))                    
+               #print(np.mean(alg.simul_sums),np.mean(alg.optimistic_sums),np.mean(alg.pessimistic_sums))     
+
+        print("######end_update_likelihood########\n")               
 
 
 
@@ -353,7 +363,6 @@ class SpeculativeMonitor(object):
         """ dado un algoritmo ejecuta cierto numero de
         instancias y guarda los resultados en la matris de
         resultados globales"""
-        print("runing algoritmo:"+str(alg))
         #  global self.instances,self.__numOfExecutions,self.pifile
 
         manager = multiprocessing.Manager()
@@ -365,7 +374,6 @@ class SpeculativeMonitor(object):
                 alg.isCompleted = True
                 break
             instance = self.instances[instance_index]
-            print(alg.run2)
             p = multiprocessing.Process(target=alg.run2, args=(instance, instance_index, self.pifile, return_dict))
             jobs.append(p)
         for p in jobs:
@@ -383,7 +391,7 @@ class SpeculativeMonitor(object):
             execution_num = self.execution_num
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
-            print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output)
+            #print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output)
             res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output + "," + str(best_alg.params.values()))
             for k in Strategy.strategy_instance_dict:
               alg = Strategy.strategy_instance_dict[k]  
@@ -431,17 +439,22 @@ class SpeculativeMonitor(object):
         
 
     def _select_strategy2(self, max_leaf):
+      print("#########start_strategy_selection##########")
+      self.save_strategies = True
+      self.candidate_strategies.clear()
       self.likelihood = self.simulations(self.__totalSimulations)
+      self.save_strategies = False
       self.likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
       probable_state = self.most_probable_state #always should be some state
+      print("probable_state:", self.most_probable_state_str, str(self.likelihood))
 
       max_volatility = -0.1
       best_strategy = None
       self.max_like=0.0
       self.min_like=1000.0
 
-      for alg in self._tree_descent_strategies:
-         print(str(alg.params.values()))
+      for alg in self.candidate_strategies:
+         #print(str(alg.params.values()))
          if alg.isCompleted: continue
          
          #alg.tmpParameters = alg.optimisticParameters
@@ -457,14 +470,16 @@ class SpeculativeMonitor(object):
          alg.tmp_sums = alg.simul_sums
          #del alg.results[999]
 
-         print(str(alg.params.values()), self.likelihood,opt_likelihood,pes_likelihood)
          volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)
+         print("volatility:", str(alg.params), str(volatility))
          if volatility > max_volatility:
            max_volatility = volatility
            best_strategy = alg
            self.max_like = max(self.likelihood,opt_likelihood,pes_likelihood)
            self.min_like = min(self.likelihood,opt_likelihood,pes_likelihood)     
       
+      print("selected_strategy:", str(best_strategy.params))
+      print("#########end_strategy_selection##########")
       return best_strategy
        
     def _toogle_anytime():
@@ -475,19 +490,19 @@ class SpeculativeMonitor(object):
         Calculate the current likelihood of the
         tree.
         """
-        print("calculting current quality")
-        print("node_dict values:", self.node_dict.values())
+        #print("calculting current quality")
+        #print("node_dict values:", self.node_dict.values())
         curr_quality = 0
         for node in self.node_dict.values():
-            print("node ", node)
-            print("not node.is_not_leaf: ", not node.is_not_leaf)
+            #print("node ", node)
+            #print("not node.is_not_leaf: ", not node.is_not_leaf)
             if not node.is_not_leaf:
                 if node.p1 > curr_quality:
                     curr_quality = node.p1
                 elif node.p2 > curr_quality:
                     curr_quality = node.p2
-        print("curr_quality", curr_quality)
+        #print("curr_quality", curr_quality)
         ret = curr_quality/self.__totalSimulations
-        print("curr_quality", ret)
+        #print("curr_quality", ret)
         return ret
 

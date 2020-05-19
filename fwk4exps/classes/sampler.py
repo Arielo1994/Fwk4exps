@@ -1,6 +1,8 @@
 import numpy as np
 import pymc3 as pm
 import random
+import logging
+
 
 class Sampler(object):
     def __init__(self):
@@ -56,6 +58,7 @@ class Sampler(object):
         return samples[0][index], samples[1][index]
 
 
+
     @staticmethod
     def sampleParameters(data):
         # https://twiecki.github.io/blog/2015/11/10/mcmc-sampling/
@@ -74,7 +77,7 @@ class Sampler(object):
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
             step = pm.Metropolis()
-            trace = pm.sample(250, step, cores=4, progressbar=True, tune=500, chains=1)
+            trace = pm.sample(250, step, cores=4, progressbar=False, tune=500, chains=1)
 
             for t in trace:
                 __medias.append(t["mu"])
@@ -90,6 +93,11 @@ class Sampler(object):
         # print("sampling parameters given data")
         np.random.seed(123)
 
+        logger = logging.getLogger('pymc3')
+        logger.setLevel(logging.ERROR)
+        _logger = logging.getLogger("theano.gof.compilelock")
+        _logger.setLevel(logging.ERROR)
+
         means = [] 
         sample = []
         # with suppress_stdout:
@@ -99,8 +107,11 @@ class Sampler(object):
 
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
-            step = pm.Metropolis()
-            trace = pm.sample(250, step, cores=4, progressbar=True, tune=500)
+            #step = pm.Metropolis()
+            #trace = pm.sample(250, step, cores=4, progressbar=False, tune=500)
+
+            step = pm.NUTS() # Hamiltonian MCMC with No U-Turn Sampler
+            trace = pm.sample(250, step, cores=4, random_seed=123, progressbar=False)
 
             for t in trace:
                 __sum = np.random.normal(c * t["mu"], np.sqrt(c) * t["sigma"])

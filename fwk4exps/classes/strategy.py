@@ -100,8 +100,8 @@ class Strategy(object):
                 instance.needs_to_be_sampled = False
                 instance.load_global_results()
                 cls.strategy_instance_dict[strategy_string] = instance
-                print("strategy dict: ")
-                print(cls.strategy_instance_dict)
+                #print("strategy dict: ")
+                #print(cls.strategy_instance_dict)
 
         return instance
 
@@ -147,11 +147,11 @@ class Strategy(object):
         args = self.args.format(**self.params)
 
         commando = self.pathExe + " " + instance.rstrip() + " " + args
-        print("comando:", commando)
+        #print("comando:", commando)
         output = subprocess.getoutput(commando)
         output = output.splitlines()
         self.results[i] = float(output[-1])
-        print("resultado: " + output[-1])
+        #print("resultado: " + output[-1])
         # print("self.rsults:", self.results)
         return float(output[-1])
 

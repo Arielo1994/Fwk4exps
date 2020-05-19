@@ -36,6 +36,7 @@ class Node(object):
             arr1.append(self.alg1.results[k])
             arr2.append(self.alg2.results[k])
         # print(arr1,arr2)
+        print (statistics.mean(self.alg1.results.values()), statistics.mean(self.alg2.results.values()))
         if statistics.mean(self.alg1.results.values()) > statistics.mean(self.alg2.results.values()):
         #if statistics.mean(arr1) > statistics.mean(arr2):
             # print("#####end_compare_strategies")
@@ -74,7 +75,7 @@ class Node(object):
         self.right = node
 
     def __str__(self):
-        return str(self.alg1)+" v/s "+str(self.alg2)
+        return str(self.alg1.params)+" v/s "+str(self.alg2.params)
 
     def refreshSimulations(self):
         if self is not None:
