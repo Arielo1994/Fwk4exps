@@ -1,6 +1,6 @@
 
 import fwk4exps.speculative_monitor as fwk
-f4e = fwk.SpeculativeMonitor(cpu_count=10)
+f4e = fwk.SpeculativeMonitor(cpu_count=7)
 
 def parameter_tuning(S, param, param_values):
   original_value = S.params[param]
