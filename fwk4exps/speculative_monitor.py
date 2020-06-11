@@ -64,9 +64,14 @@ class SpeculativeMonitor(object):
         self.pes_res = {}
         self.simul_mean = {}
         self.simulation_mode = False
+        self.state_depth = 0
+        self.depth = 0
 
         self.state_counter = {} #contador de simulaciones por estado
+        self.real_state_counter = {} #guarda las simulaciones realistas (ni pesimistas ni optimistas)
+        
         self.most_probable_state = None
+        self.save_child=False
         
         if cpu_count is None:
             self.cpu_count = multiprocessing.cpu_count()
@@ -159,8 +164,13 @@ class SpeculativeMonitor(object):
             self.tree.set_root(self._retrieve_node())
         node = self.tree.root
         
-        while True:
+        self.probable_output = None
+        while True:           
             print(node)
+            
+            if (node != self.tree.root and (node.state not in self.real_state_counter or
+                 self.real_state_counter[node.state] < self.__totalSimulations/2)): break
+                 
             self._tree_descent_strategies.add(node.alg1)
             self._tree_descent_strategies.add(node.alg2)
             if node.compare_strategies(self.pifile, self.instances, self.cpu_count):
@@ -244,9 +254,14 @@ class SpeculativeMonitor(object):
         y vuelve a retrieve node
         """
 
-
-        if self.simulation_mode == True:
-          state = TraceBackInfo.getExperimentState()
+        state = TraceBackInfo.getExperimentState()
+        
+        if self.simulation_mode == True:  
+          self.depth +=1     
+          if self.save_child==True:
+            print(str(S1.params) + " vs " + str(S2.params))
+            self.most_probable_state=state
+            self.save_child=False
           
           if state in self.state_counter:
             self.state_counter[state] += 1
@@ -254,10 +269,12 @@ class SpeculativeMonitor(object):
             #surpassing this value will be saved) 
             if  self.state_counter[state] == self.__totalSimulations/2:
                self.most_probable_state=state
-               self.most_probable_state_str = str(S1.params) + " vs " + str(S2.params)
-               if self.save_strategies == True:
-                 self.candidate_strategies.add(S1)
-                 self.candidate_strategies.add(S2)
+               self.save_child=True
+               self.most_probable_state_str = str(S1.params) + " vs " + str(S2.params) 
+               if self.save_strategies == True: 
+                 self.state_depth = self.depth
+                 if (S1 in self.simul_mean): self.candidate_strategies.add(S1)
+                 if (S2 in self.simul_mean): self.candidate_strategies.add(S2)
           else:
              self.state_counter[state] = 1
            
@@ -279,13 +296,13 @@ class SpeculativeMonitor(object):
             else:
                 self.__count = self.__count+1
                 return S2
-        experiment_state = TraceBackInfo.getExperimentState()
-        if experiment_state in self.node_dict:
-            self.__speculativeNode = self.node_dict[experiment_state]
+
+        if state in self.node_dict:
+            self.__speculativeNode = self.node_dict[state]
             #print(1,self.__speculativeNode)
         else:
-            self.__speculativeNode = Node(S1, S2, len(self.instances), 0)
-            self.node_dict[experiment_state] = self.__speculativeNode
+            self.__speculativeNode = Node(S1, S2, len(self.instances), 0, state)
+            self.node_dict[state] = self.__speculativeNode
             #print(2,self.__speculativeNode)
 
         raise ValueError
@@ -369,6 +386,7 @@ class SpeculativeMonitor(object):
         return_dict = manager.dict()
         jobs = []
         for i in range(0, self.cpu_count):
+            Strategy.total_executions += 1
             instance_index = alg.selectInstance()
             if instance_index >= len(self.instances):
                 alg.isCompleted = True
@@ -379,7 +397,6 @@ class SpeculativeMonitor(object):
         for p in jobs:
             p.start()
         for p in jobs:
-            self.execution_num = self.execution_num + 1
             p.join()
         keys = [key for key, value in return_dict.items()]
         for k in keys:
@@ -392,15 +409,15 @@ class SpeculativeMonitor(object):
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
             #print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output)
-            res.write(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output + "," + str(best_alg.params.values()))
-            for k in Strategy.strategy_instance_dict:
-              alg = Strategy.strategy_instance_dict[k]  
-              res.write( str(alg.lastInstanceIndex) + " ")
+            res.write(str(Strategy.total_executions) + "," + str(self.likelihood) + "," + self.probable_output + ","+ str(self.state_depth) + "," + str(best_alg.params) )
+            #for k in Strategy.strategy_instance_dict:
+            #  alg = Strategy.strategy_instance_dict[k]  
+            #  res.write( str(alg.lastInstanceIndex) + " ")
 
-            for k in Strategy.strategy_instance_dict:
-              alg = Strategy.strategy_instance_dict[k]  
-              if len(alg.results.values())>0:
-                res.write( str(statistics.mean(alg.results.values())) + " ")
+            #for k in Strategy.strategy_instance_dict:
+            #  alg = Strategy.strategy_instance_dict[k]  
+            #  if len(alg.results.values())>0:
+            #    res.write( str(statistics.mean(alg.results.values())) + " ")
 
             res.write("\n")
             # res.write("{execution_num},{max_likelihood},{tree_desc_likelihood},{best_alg}\n")
@@ -425,6 +442,7 @@ class SpeculativeMonitor(object):
             
         try:
            self.output=""
+           self.depth = 0
            self.experimental_design()
         except ValueError as x:
            if self.output==self.probable_output:
@@ -442,11 +460,16 @@ class SpeculativeMonitor(object):
       print("#########start_strategy_selection##########")
       self.save_strategies = True
       self.candidate_strategies.clear()
+      self.save_child=False
       self.likelihood = self.simulations(self.__totalSimulations)
+      
+      self.real_state_counter = self.state_counter.copy()
+      
       self.save_strategies = False
-      self.likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
+      likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
+      print("likelihood:",likelihood, self.depth)
       probable_state = self.most_probable_state #always should be some state
-      print("probable_state:", self.most_probable_state_str, str(self.likelihood))
+      #print("probable_state:", str(self.most_probable_state))
 
       max_volatility = -0.1
       best_strategy = None
@@ -470,13 +493,13 @@ class SpeculativeMonitor(object):
          alg.tmp_sums = alg.simul_sums
          #del alg.results[999]
 
-         volatility = max(self.likelihood,opt_likelihood,pes_likelihood) - min(self.likelihood,opt_likelihood,pes_likelihood)
+         volatility = max(likelihood,opt_likelihood,pes_likelihood) - min(likelihood,opt_likelihood,pes_likelihood)
          print("volatility:", str(alg.params), str(volatility))
          if volatility > max_volatility:
            max_volatility = volatility
            best_strategy = alg
-           self.max_like = max(self.likelihood,opt_likelihood,pes_likelihood)
-           self.min_like = min(self.likelihood,opt_likelihood,pes_likelihood)     
+           self.max_like = max(likelihood,opt_likelihood,pes_likelihood)
+           self.min_like = min(likelihood,opt_likelihood,pes_likelihood)     
       
       print("selected_strategy:", str(best_strategy.params))
       print("#########end_strategy_selection##########")

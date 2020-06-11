@@ -3,7 +3,7 @@ import statistics
 
 
 class Node(object):
-    def __init__(self, s1, s2, total_instances, delta_sig):
+    def __init__(self, s1, s2, total_instances, delta_sig, state):
         self.left = None
         self.right = None
         self.alg1 = s1
@@ -14,6 +14,7 @@ class Node(object):
         #self.leaf_node_izq = None
         #self.leaf_node_der = None
         self.is_leaf = False
+        self.state=state
 
     def compare_strategies(self, pifile, instances, cpu_count):
         """ Compara la evaluacion parcial de las medias de ambas
@@ -36,7 +37,7 @@ class Node(object):
             arr1.append(self.alg1.results[k])
             arr2.append(self.alg2.results[k])
         # print(arr1,arr2)
-        print (statistics.mean(self.alg1.results.values()), statistics.mean(self.alg2.results.values()))
+        print (str(statistics.mean(self.alg1.results.values())), "(", str(len(self.alg2.results.values())) , ") vs ", str(statistics.mean(self.alg2.results.values())), "(", str(len(self.alg1.results.values())) , ")")
         if statistics.mean(self.alg1.results.values()) > statistics.mean(self.alg2.results.values()):
         #if statistics.mean(arr1) > statistics.mean(arr2):
             # print("#####end_compare_strategies")

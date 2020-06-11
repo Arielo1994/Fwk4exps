@@ -10,9 +10,10 @@ import json
 import hashlib
 
 
-class Strategy(object):
+class Strategy:
     strategy_instance_dict = dict()
     permutation_folder = None
+    total_executions = 0
 
     def __new__(cls, *args, **kwargs):
         #print("__new__ method")
@@ -126,13 +127,8 @@ class Strategy(object):
         return self.name+" "+self.args.format(**self.params)
 
     def run(self, instance, i, PI):
-        # PI = '/home/investigador/Documentos/algoritmo100real/Metasolver/extras/fw4exps/instancesBR.txt'
-        # print("run function")
-        # print("instance: {}, i: {}, PI: {}".format(instance,i,PI))
         aux = copy.copy(PI)
-        # print("aux:", aux)
         aux = aux.split('/')
-        # print("aux", aux)
         aux.pop()
         if len(aux)>0 :
           aux.pop(0)
@@ -141,18 +137,12 @@ class Strategy(object):
               PI = PI+"/"+e
           PI = PI+"/"
           instance = PI+instance
-        # args = self.args
-        # for k, v in self.params.items():
-        #     args = args.replace(k, str(v))
         args = self.args.format(**self.params)
 
         commando = self.pathExe + " " + instance.rstrip() + " " + args
-        #print("comando:", commando)
         output = subprocess.getoutput(commando)
         output = output.splitlines()
         self.results[i] = float(output[-1])
-        #print("resultado: " + output[-1])
-        # print("self.rsults:", self.results)
         return float(output[-1])
 
     def run2(self, instance, i, PI, return_dict):
@@ -170,6 +160,7 @@ class Strategy(object):
         return_dict = manager.dict()
         jobs = []
         for i in range(0, cpu_count):
+            Strategy.total_executions += 1
             instance_index = self.selectInstance()
             instance = instances[instance_index]
             p = multiprocessing.Process(target=self.run2, args=(instance, instance_index, pifile, return_dict))

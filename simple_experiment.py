@@ -1,30 +1,27 @@
+
 import fwk4exps.speculative_monitor as fwk
+f4e = fwk.SpeculativeMonitor(cpu_count=7)
 
-f4e = fwk.SpeculativeMonitor(cpu_count=2)
-
-bsg_path = 'python opt_test.py'
+def parameter_tuning(S, param, param_values):
+  original_value = S.params[param]
+  original_name = S.name
+  params = S.params.copy()
+  for value in param_values:
+    params[param]=value
+    if original_value == value: 
+      continue
+    else: 
+       S2 = fwk.Strategy(original_name, S.pathExe, S.args, params)
+    S = f4e.bestStrategy(S, S2)
+  return S
 
 def experimentalDesign():
-    print("experimental design2")
-
-    S = fwk.Strategy(bsg_path, '{x} {y}')
-    S.params = {"x": -1.0, "y": -1.0}
-
-    x = f4e.best_param_value(S, "x", [-1.0, -0.5, 0.0, 0.5])
-    S.set_param("x", x)
-    b = f4e.best_param_value(S, "y", [-1.0, -0.5, 0.0, 0.5])
-    S.set_param("y", y)   
-
-    #print(1)
-    #S = fwk.Strategy('opt_test', bsg_path, '{x} {y}', params)
-    #print("S:", S)
-    #params_S2 = {"x": 1.0, "y": 0.0}
-    #S2 = fwk.Strategy('opt_test', bsg_path, '{x} {y}', params_S2)
-    #print("S2", S2)
-
-    #S3 = f4e.bestStrategy(S, S2)
-
-    #print("The best found parameter values are: ", S.params)
+    #print("experimental design2")
+    S = fwk.Strategy('opt_test', 'python opt_test.py', '{x} {y}', {"x": -1.0, "y": -1.0})
+    S = parameter_tuning(S, "x", [-1.0, 0.0])
+    S = parameter_tuning(S, "y", [-1.0, 0.0])
+    
+    f4e.output = S.name + " " + str(tuple(S.params.values())) + " "
 
     f4e.terminate()
 
