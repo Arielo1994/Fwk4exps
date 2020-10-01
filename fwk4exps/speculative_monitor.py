@@ -33,7 +33,7 @@ class SpeculativeMonitor(object):
         self.experimental_design = None
         self.instances = None
         self.global_results = None
-        self.__totalSimulations = 1000
+        self.__totalSimulations = 500
         self.iteration = 1
         # self.__numOfExecutions = 0
         self.s2id = {}
@@ -71,6 +71,7 @@ class SpeculativeMonitor(object):
         self.real_state_counter = {} #guarda las simulaciones realistas (ni pesimistas ni optimistas)
         
         self.most_probable_state = None
+        self.most_probable_state_child = None
         self.save_child=False
         
         if cpu_count is None:
@@ -170,6 +171,7 @@ class SpeculativeMonitor(object):
             
             if (node != self.tree.root and (node.state not in self.real_state_counter or
                  self.real_state_counter[node.state] < self.__totalSimulations/2)): break
+            if (node != self.tree.root): print(self.real_state_counter[node.state] / self.__totalSimulations)
                  
             self._tree_descent_strategies.add(node.alg1)
             self._tree_descent_strategies.add(node.alg2)
@@ -259,15 +261,17 @@ class SpeculativeMonitor(object):
         if self.simulation_mode == True:  
           self.depth +=1     
           if self.save_child==True:
-            print(str(S1.params) + " vs " + str(S2.params))
-            self.most_probable_state=state
+            #print(str(S1.params) + " vs " + str(S2.params))
+            self.most_probable_state_child=state
+            #self.most_probable_state_str = str(S1.params) + " vs " + str(S2.params) 
             self.save_child=False
           
           if state in self.state_counter:
             self.state_counter[state] += 1
+            #print(str(S1.params) + " vs " + str(S2.params)  + " " +self.state_counter[state] )                        
             #only when the state reach the 50\% (in this way the latest state
             #surpassing this value will be saved) 
-            if  self.state_counter[state] == self.__totalSimulations/2:
+            if self.state_counter[state] >= self.__totalSimulations/2 and self.depth > self.state_depth:
                self.most_probable_state=state
                self.save_child=True
                self.most_probable_state_str = str(S1.params) + " vs " + str(S2.params) 
@@ -281,6 +285,7 @@ class SpeculativeMonitor(object):
 
           if (S1 not in self.simul_mean) or (S2 not in self.simul_mean):
              self.output = None
+             self.save_child=False
              raise ValueError
           if  self.simul_mean[S1] > self.simul_mean[S2]:
              return S1
@@ -313,12 +318,19 @@ class SpeculativeMonitor(object):
         """
 
         state = TraceBackInfo.getExperimentState()
-          
+
+        self.depth +=1     
+        if self.save_child==True:
+          #print(str(S1.params) + " vs " + str(S2.params))
+          self.most_probable_state_child=state
+          #self.most_probable_state_str = "terminal_state"
+          self.save_child=False
+     
         if state in  self.state_counter:
             self.state_counter[state] += 1
             #only when the state reach the 50\% (in this way the latest state
             #surpassing this value will be saved) 
-            if self.state_counter[state] == self.__totalSimulations/2 :
+            if self.state_counter[state] >= self.__totalSimulations/2 and self.depth > self.state_depth:
                self.most_probable_state=state
                self.most_probable_state_str = "terminal_state"
         else:
@@ -359,18 +371,16 @@ class SpeculativeMonitor(object):
                n= min(1,len(self.instances)-len(data))
                datab = [self.opt_res[alg]]*n          
                data.extend(datab)
-               #alg.optimisticParameters = Sampler.sampleParameters(data)
                alg.optimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
                for i in range(0,n): data.pop()
 
                #Se simula una suma pesimista
                datab = [self.pes_res[alg]]*n                
                data.extend(datab)
-               #alg.pessimisticParameters = Sampler.sampleParameters(data)
                alg.pessimistic_sums = Sampler.sample_means(data, len(self.instances)-len(data))
                for i in range(0,n): data.pop()
                alg.needs_to_be_sampled = False    
-               #print(np.mean(alg.simul_sums),np.mean(alg.optimistic_sums),np.mean(alg.pessimistic_sums))     
+               print(np.mean(alg.pessimistic_sums),np.mean(alg.simul_sums),np.mean(alg.optimistic_sums), len(data))     
 
         print("######end_update_likelihood########\n")               
 
@@ -409,7 +419,11 @@ class SpeculativeMonitor(object):
             max_likelihood = self.max_sim_likelihood
             tree_desc_likelihood = self.tree_desc_likelihood
             #print(str(execution_num) + "," + str(self.likelihood) + "," +str(self.max_like) + "," + str(self.min_like) +"," + self.probable_output)
-            res.write(str(Strategy.total_executions) + "," + str(self.likelihood) + "," + self.probable_output + ","+ str(self.state_depth) + "," + str(best_alg.params) )
+            if self.probable_output==None:
+               res.write(str(Strategy.total_executions) + "," + str(self.likelihood) + "," + str(self.most_probable_state_str)  + ","+ str(self.state_depth) + "," + str(best_alg.params) )
+            else:
+               res.write(str(Strategy.total_executions) + "," + str(self.likelihood) + "," + self.probable_output  + ","+ str(self.state_depth) + "," + str(best_alg.params) )
+            
             #for k in Strategy.strategy_instance_dict:
             #  alg = Strategy.strategy_instance_dict[k]  
             #  res.write( str(alg.lastInstanceIndex) + " ")
@@ -429,7 +443,7 @@ class SpeculativeMonitor(object):
     def simulations(self, total, probable_state=None):
       self.simulation_mode = True
       self.state_counter = {} # reinitialization 
-
+      self.state_depth = 0
       if probable_state!=None:
         self.state_counter[probable_state] = 0
       
@@ -445,7 +459,7 @@ class SpeculativeMonitor(object):
            self.depth = 0
            self.experimental_design()
         except ValueError as x:
-           if self.output==self.probable_output:
+           if self.output!=None and self.output==self.probable_output:
               count +=1
 
       if probable_state != None:
@@ -466,9 +480,11 @@ class SpeculativeMonitor(object):
       self.real_state_counter = self.state_counter.copy()
       
       self.save_strategies = False
-      likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
-      print("likelihood:",likelihood, self.depth)
-      probable_state = self.most_probable_state #always should be some state
+      likelihood = self.state_counter[self.most_probable_state_child]/self.__totalSimulations
+      print("likelihood:",self.state_counter[self.most_probable_state], self.depth)
+      self.likelihood = self.state_counter[self.most_probable_state]/self.__totalSimulations
+
+      probable_state = self.most_probable_state_child #always should be some state
       #print("probable_state:", str(self.most_probable_state))
 
       max_volatility = -0.1

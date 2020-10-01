@@ -37,7 +37,7 @@ class Node(object):
             arr1.append(self.alg1.results[k])
             arr2.append(self.alg2.results[k])
         # print(arr1,arr2)
-        print (str(statistics.mean(self.alg1.results.values())), "(", str(len(self.alg2.results.values())) , ") vs ", str(statistics.mean(self.alg2.results.values())), "(", str(len(self.alg1.results.values())) , ")")
+        print (str(statistics.mean(self.alg1.results.values())), "(", str(len(self.alg1.results.values())) , ") vs ", str(statistics.mean(self.alg2.results.values())), "(", str(len(self.alg2.results.values())) , ")")
         if statistics.mean(self.alg1.results.values()) > statistics.mean(self.alg2.results.values()):
         #if statistics.mean(arr1) > statistics.mean(arr2):
             # print("#####end_compare_strategies")

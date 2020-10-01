@@ -72,7 +72,7 @@ class Sampler(object):
         # with suppress_stdout:
         with pm.Model():
             mu = pm.Normal('mu', np.mean(data), 20)
-            sigma = pm.Uniform('sigma', lower=0.001, upper=20)
+            sigma = pm.Uniform('sigma', lower=0.001, upper=1)
 
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
@@ -113,7 +113,7 @@ class Sampler(object):
             step = pm.NUTS() # Hamiltonian MCMC with No U-Turn Sampler
             trace = pm.sample(250, step, cores=4, random_seed=123, progressbar=False)
 
-            for t in trace:
+            for t in trace: 
                 __sum = np.random.normal(c * t["mu"], np.sqrt(c) * t["sigma"])
                 if perc: sample.append(np.random.normal(t["mu"], t["sigma"]))
                 mean = (sum(data) + __sum)/(len(data)+c)
@@ -122,7 +122,7 @@ class Sampler(object):
             if perc: 
               sample.sort()
               pes_res = sample[(len(sample)*5)//100]
-              opt_res = sample[(len(sample)*95)//100]     
+              opt_res = sample[(len(sample)*95)//100]   
               return means, pes_res, opt_res
 
         return means
