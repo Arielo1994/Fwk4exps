@@ -1,5 +1,6 @@
 import subprocess
 import multiprocessing
+import copy
 
 class Strategy:
     strategy_dict = dict()
