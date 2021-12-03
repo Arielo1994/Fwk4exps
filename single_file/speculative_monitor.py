@@ -184,7 +184,6 @@ class SpeculativeMonitor:
 
       while volatile_strategy==None:
 
-        no_impact = []
         for state, S1, S2 in self.tree_descent_path:
           if state not in mid_counter: continue 
           
@@ -192,7 +191,6 @@ class SpeculativeMonitor:
           for alg_base in [S1,S2]:
             if alg_base is None: continue
             if alg_base in evaluated: continue
-            if iter % alg_base.no_impact != 0: continue
             
             self.simul_mean[alg_base] = np.partition(alg_base.est_means,-10)[-10] #np.max(alg_base.est_means)  10/250
             self._simulations(n, alg_base=alg_base)
@@ -210,11 +208,6 @@ class SpeculativeMonitor:
             ## estrategia escogida será la que tiene un gran impacto en likelihood y se encuentra en niveles tempranos del árbol
             impact = 1.0 - (val/ini_value)
 
-            if impact < 0.5:
-              no_impact.append(alg_base)
-            else:
-              alg_base.no_impact = 1
-
             if impact>max_impact:
               max_impact = impact
               volatile_strategy=alg_base
@@ -226,16 +219,9 @@ class SpeculativeMonitor:
 
           if max_impact > 0.5: break
 
-        if iter >0 and max_impact > 0.5:
-          for algo in no_impact:
-            algo.no_impact *= 2
-
         iter=0
         max_impact=-1.0
         
-
-      #si volatile is None, retornar primera estrategia con n_runs < len(instances)
-      volatile_strategy.no_impact=1
 
       return volatile_strategy, max_impact, [mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ]
 
@@ -318,7 +304,7 @@ class SpeculativeMonitor:
             if counters_file is not None:
                 save("counters.dat",self.counters)
 
-            if self.counters[len(self.counters)-1] >= 99: break
+            if counter[len(counter)-1] >= 99: break
             i+=1
 
   @staticmethod
