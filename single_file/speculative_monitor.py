@@ -318,7 +318,7 @@ class SpeculativeMonitor:
             if counters_file is not None:
                 save("counters.dat",self.counters)
 
-            if self.counter[len(counter)-1] >= 99: break
+            if self.counter[len(self.counter)-1] >= 99: break
             i+=1
 
   @staticmethod

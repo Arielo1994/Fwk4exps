@@ -41,5 +41,5 @@ for str_name in Strategy.strategy_dict:
 print (total)
 len(f4e.counters)
 
-f4e.speculative_execution(strategies_file=None, counters_file=None)
+f4e.speculative_execution(strategies_file="strategies.dat", counters_file="counters.dat")
 
