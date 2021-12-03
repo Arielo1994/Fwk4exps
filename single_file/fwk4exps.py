@@ -454,11 +454,11 @@ def experimentalDesign():
     f4e.output += str(S.params["p"]) + " "
     terminate(f4e)  
 
-#counters=[]
-#Strategy.strategy_dict=dict()
-#f4e = SpeculativeMonitor(25, experimentalDesign, 'instancesCLP-shuf.txt')
+counters=[]
+Strategy.strategy_dict=dict()
+f4e = SpeculativeMonitor(15, experimentalDesign, 'instancesCLP-shuf.txt')
 
-f4e, counters = load_experiments()
+#f4e, counters = load_experiments()
 
 total=0
 for str_name in Strategy.strategy_dict:
