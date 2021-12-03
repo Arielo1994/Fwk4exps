@@ -422,7 +422,7 @@ def speculative_execution(f4e, counters):
     save("counters.dat",counters)
     if counter[len(counter)-1] >= 99: break
     #time.sleep(2)
-    clear_output()
+    #clear_output()
 
 
 ## The experimental design
