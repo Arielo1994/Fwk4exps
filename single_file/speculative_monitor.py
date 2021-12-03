@@ -284,7 +284,7 @@ class SpeculativeMonitor:
           n = alg.n_runs
           res = alg.results[0:n] - self.base_strategy.results[0:n]
 
-          alg.est_means = sample_means(res, len(self.instances)-len(res))
+          alg.est_means = SpeculativeMonitor.sample_means(res, len(self.instances)-len(res))
           alg.needs_to_be_sampled=False
 
   def speculative_execution(self, strategies_file=None, counters_file=None):
