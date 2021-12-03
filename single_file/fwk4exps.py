@@ -27,7 +27,7 @@ def experimentalDesign():
     f4e.output += str(S.params["g"]) + " " 
     S = parameter_tuning(S, "p", [0.00, 0.01, 0.02, 0.03, 0.04])
     f4e.output += str(S.params["p"]) + " "
-    f4e.terminate(f4e)  
+    f4e.terminate()  
 
 
 f4e = SpeculativeMonitor(15, experimentalDesign, 'instancesCLP-shuf.txt', strategies_file="strategies.dat", counters_file="counters.dat")
