@@ -210,7 +210,7 @@ class SpeculativeMonitor:
             ## estrategia escogida será la que tiene un gran impacto en likelihood y se encuentra en niveles tempranos del árbol
             impact = 1.0 - (val/ini_value)
 
-            if impact < 0.8:
+            if impact < 0.5:
               no_impact.append(alg_base)
             else:
               alg_base.no_impact = 1
@@ -224,9 +224,9 @@ class SpeculativeMonitor:
 
             evaluated.add(alg_base)
 
-          if max_impact > 0.8: break
+          if max_impact > 0.5: break
 
-        if iter >0 and max_impact > 0.8:
+        if iter >0 and max_impact > 0.5:
           for algo in no_impact:
             algo.no_impact *= 2
 

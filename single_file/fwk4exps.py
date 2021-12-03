@@ -30,7 +30,7 @@ def experimentalDesign():
     terminate(f4e)  
 
 
-f4e = SpeculativeMonitor(15, experimentalDesign, 'instancesCLP-shuf.txt', strategies_file=None, counters_file=None)
+f4e = SpeculativeMonitor(15, experimentalDesign, 'instancesCLP-shuf.txt', strategies_file="strategies.dat", counters_file="counters.dat")
 
 total=0
 for str_name in Strategy.strategy_dict:
