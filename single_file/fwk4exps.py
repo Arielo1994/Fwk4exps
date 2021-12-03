@@ -389,7 +389,6 @@ def load_experiments():
   return f4e, counters
 
 
-from IPython.display import clear_output 
 import time
 
 
@@ -467,5 +466,5 @@ for str_name in Strategy.strategy_dict:
 print (total)
 len(counters)
 
-#speculative_execution(f4e, counters)
+speculative_execution(f4e, counters)
 
