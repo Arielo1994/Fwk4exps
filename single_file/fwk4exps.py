@@ -117,7 +117,7 @@ class SpeculativeMonitor:
       with open(pifile) as f:
           self.instances = f.readlines()
 
-import traceback
+import traceback, sys
 class TraceBackInfo(object):
     def getExperimentState():
         """
