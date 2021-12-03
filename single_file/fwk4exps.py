@@ -371,7 +371,7 @@ def load (filename):
 
 
 def load_experiments():
-  f4e = SpeculativeMonitor(25, experimentalDesign, 'instancesCLP-shuf.txt')
+  f4e = SpeculativeMonitor(15, experimentalDesign, 'instancesCLP-shuf.txt')
   Strategy.strategy_dict=load("strategies.dat")
   counters=load("counters.dat")
 
