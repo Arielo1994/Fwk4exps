@@ -395,6 +395,7 @@ import time
 
 
 def speculative_execution(f4e, counters):
+  i=0
   while True:
     _tree_descent(f4e)
     probable_output = f4e.output
@@ -421,8 +422,9 @@ def speculative_execution(f4e, counters):
     save("strategies.dat",Strategy.strategy_dict)
     save("counters.dat",counters)
     if counter[len(counter)-1] >= 99: break
-    #time.sleep(2)
+    i+=1
     #clear_output()
+
 
 
 ## The experimental design
