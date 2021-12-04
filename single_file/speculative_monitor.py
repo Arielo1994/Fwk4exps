@@ -169,7 +169,7 @@ class SpeculativeMonitor:
       print("counters:",[mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ])
 
       volatile_strategy = None
-      max_impact= 0.0
+      max_impact= -1.0
       evaluated = set()
       
       ## se comparan estrategias usando likelihood de nodo más lejano de la raiz con P>10% (probable_state)
