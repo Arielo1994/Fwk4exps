@@ -164,33 +164,30 @@ class SpeculativeMonitor:
 
 
   def _select_strategy(self, n=100, iter=0):
-      self._simulations(n=n)
-      mid_counter = copy.deepcopy(self.state_counter)
-      print("counters:",[mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ])
+    self._simulations(n=n)
+    mid_counter = copy.deepcopy(self.state_counter)
+    print("counters:",[mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ])
+   
+    ## se comparan estrategias usando likelihood de nodo más lejano de la raiz con P>10% (probable_state)
+    probable_index = len(self.tree_descent_path)-1
 
-      volatile_strategy = None
-      max_impact= -1.0
-      evaluated = set()
-      
-      ## se comparan estrategias usando likelihood de nodo más lejano de la raiz con P>10% (probable_state)
-      probable_index = len(self.tree_descent_path)-1
-
-      for s, _, _ in reversed(self.tree_descent_path):
+    for s, _, _ in reversed(self.tree_descent_path):
         ini_value=mid_counter[s][0] if s in mid_counter else 0
         if s in mid_counter and mid_counter[s][0]>=10: break
         probable_index -= 1
+
+    volatile_strategy = None
+    max_impact= -100.0
+    evaluated = set()
+
+    for state, S1, S2 in self.tree_descent_path:
+
+        if state not in mid_counter: continue 
         
-    
-
-      while volatile_strategy==None:
-
-        for state, S1, S2 in self.tree_descent_path:
-          if state not in mid_counter: continue 
-          
-          impact = None
-          for alg_base in [S1,S2]:
+        for alg_base in [S1,S2]:
             if alg_base is None: continue
             if alg_base in evaluated: continue
+            if alg_base.n_runs == len(self.instances): continue
             
             self.simul_mean[alg_base] = np.partition(alg_base.est_means,-10)[-10] #np.max(alg_base.est_means)  10/250
             self._simulations(n, alg_base=alg_base)
@@ -209,21 +206,19 @@ class SpeculativeMonitor:
             impact = 1.0 - (val/ini_value)
 
             if impact>max_impact:
-              max_impact = impact
-              volatile_strategy=alg_base
+                max_impact = impact
+                volatile_strategy=alg_base
 
-            print(alg_base.params,val/ini_value)
+            print(alg_base.params,impact)
             
-
             evaluated.add(alg_base)
 
-          if max_impact > 0.5: break
+            if max_impact > 0.5: break
 
-        iter=0
-        max_impact=-1.0
+        if max_impact > 0.5: break
         
 
-      return volatile_strategy, max_impact, [mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ]
+    return volatile_strategy, max_impact, [mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ]
 
 
   def _tree_descent(self):
@@ -254,10 +249,15 @@ class SpeculativeMonitor:
               print("base strategy:", self.base_strategy.params)
           
 
+      done = True
+      for state, S1, S2 in self.tree_descent_path:
+        if S1.n_runs < len(self.instances) or S2.n_runs < len(self.instances):
+            done = False
+            break
             
-
       print(self.output)
       print("######end_tree_descent########")
+      return done
       #print("node at the end of tree_descent:", node)
 
 
@@ -276,10 +276,13 @@ class SpeculativeMonitor:
   def speculative_execution(self, strategies_file=None, counters_file=None):
         i=0
         while True:
-            self._tree_descent()
+            done = self._tree_descent()
+            if done: break
+
             probable_output = self.output
             self.estimate_means()
             strategy, diff, counter = self._select_strategy(n=100, iter=i)
+            if strategy==None: break
             
             print([(S1.n_runs, S2.n_runs) for state, S1, S2 in self.tree_descent_path[:-1]])
             print([np.partition(S1.est_means,-10)[-10]-np.partition(S1.est_means,9)[9] for state, S1, S2 in self.tree_descent_path[:-1]])
