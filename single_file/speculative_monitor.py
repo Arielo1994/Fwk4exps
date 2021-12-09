@@ -298,14 +298,14 @@ class SpeculativeMonitor:
                 algo=Strategy.strategy_dict[str_name]
                 total_runs+=algo.n_runs
 
-            self.counters.append((probable_output, strategy.params, counter, total_runs))
+            self.counters.append((probable_output, strategy.params, counter, total_runs, strategy.n_runs))
             print("total runs:", total_runs)
 
             if strategies_file is not None:
-                save("strategies.dat",Strategy.strategy_dict)
+                save(strategies_file,Strategy.strategy_dict)
             
             if counters_file is not None:
-                save("counters.dat",self.counters)
+                save(counters_file,self.counters)
             i+=1
 
   @staticmethod
