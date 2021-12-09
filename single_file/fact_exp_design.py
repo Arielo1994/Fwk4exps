@@ -5,7 +5,7 @@ import itertools
 
 def experimentalDesign():
     base_params = {"x": -1.0, "y": -1.0}
-    S = Strategy.create_strategy('opt_test', 'python3.6 opt_test.py 1.0', '{x} {y}', {"x": 1.0, "y": 1.0})
+    S = Strategy.create_strategy('opt_test', 'python3.6 opt_test.py 1.0', '{x} {y}', base_params)
 
     #factorial design
     f4e.output = ""
