@@ -40,9 +40,9 @@ for str_name in Strategy.strategy_dict:
     print(algo.params, algo.n_runs)
 print (total)
 
-for c in counters:
+for c in f4e.counters:
   print(c[0])
 
 
-for c in counters:
+for c in f4e.counters:
   print(c[1])
