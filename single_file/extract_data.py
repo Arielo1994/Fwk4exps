@@ -45,4 +45,4 @@ for c in f4e.counters:
 
 
 for c in f4e.counters:
-  print(c[1])
+  print(c[2])
