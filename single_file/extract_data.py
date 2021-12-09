@@ -37,7 +37,7 @@ for str_name in Strategy.strategy_dict:
   algo=Strategy.strategy_dict[str_name]
   total+=algo.n_runs
   if algo.est_means is not None and len(algo.est_means)>0:
-    print(algo.params, algo.n_runs)
+    print(algo.params, algo.results)
 print (total)
 
 for c in f4e.counters:
@@ -45,4 +45,4 @@ for c in f4e.counters:
 
 
 for c in f4e.counters:
-  print(c[2])
+  print(c[2:4])
