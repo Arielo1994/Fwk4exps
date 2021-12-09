@@ -12,7 +12,7 @@ def experimentalDesign():
     for x,y in itertools.product(*[[0.0, 1.0, 2.0],[0.0, 1.0, 2.0]]):
         params =  {"x": x, "y": y}
         if params == base_params: continue
-        S2 = Strategy.create_strategy('opt_test', 'python .\opt_test.py 0.5',  '{x} {y}', params)
+        S2 = Strategy.create_strategy('opt_test', 'python opt_test.py 0.5',  '{x} {y}', params)
         S = f4e.bestStrategy(S, S2)
 
     f4e.output += str(S.params)
