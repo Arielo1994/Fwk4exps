@@ -43,7 +43,7 @@ class Strategy:
         instance = PI+instance
 
       commando = self.exe + " " + instance.rstrip() + " " + self.params_str.format(**self.params)
-      print(commando)
+      #print(commando)
       output = subprocess.getoutput(commando)
       output = output.splitlines()
       ret_dic[i] = float(output[-1])  
