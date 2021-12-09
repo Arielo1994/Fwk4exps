@@ -1,5 +1,7 @@
 from strategy import Strategy
 from speculative_monitor import SpeculativeMonitor
+import numpy as np
+
 
 
 ## The experimental design
@@ -37,12 +39,23 @@ for str_name in Strategy.strategy_dict:
   algo=Strategy.strategy_dict[str_name]
   total+=algo.n_runs
   if algo.est_means is not None and len(algo.est_means)>0:
-    print(algo.params, algo.results)
+    print(algo.params, np.mean(algo.results), np.std(algo.results), algo.n_runs )
 print (total)
 
 for c in f4e.counters:
   print(c[0])
 
+for c in f4e.counters:
+  print(c[1])
 
 for c in f4e.counters:
-  print(c[2:4])
+  if len(c[2])>16:
+    print(c[3],c[2][4],c[2][8],c[2][12],c[2][16])
+  elif len(c[2])>12:
+    print(c[3],c[2][4],c[2][8],c[2][12])
+  elif len(c[2])>8:
+    print(c[3],c[2][4],c[2][8])
+  elif len(c[2])>4:
+    print(c[3],c[2][4])
+
+
