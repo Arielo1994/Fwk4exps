@@ -4,12 +4,12 @@ from speculative_monitor import SpeculativeMonitor
 import itertools
 
 def experimentalDesign():
-    base_params = {"x": 0.0, "y": 0.0}
+    base_params = {"x": -1.0, "y": -1.0}
     S = Strategy.create_strategy('opt_test', 'python3.6 opt_test.py 1.0', '{x} {y}', {"x": 1.0, "y": 1.0})
 
     #factorial design
     f4e.output = ""
-    for x,y in itertools.product(*[[0.0, 1.0, 2.0],[0.0, 1.0, 2.0]]):
+    for x,y in itertools.product(*[[-1.0, 0.0, 1.0],[-1.0, 0.0, 1.0]]):
         params =  {"x": x, "y": y}
         if params == base_params: continue
         S2 = Strategy.create_strategy('opt_test', 'python3.6 opt_test.py 1.0',  '{x} {y}', params)
