@@ -51,7 +51,9 @@ class Strategy:
     def run_instances(self):
       return self.n_runs
 
-    def norm_results(self, base_strategy):
+    def norm_results(self, base_strategy=None):
       n = self.run_instances()
-      res = self.results[0:n] - base_strategy.results[0:n]
+      res = base_strategy.results[0:n]
+      if base_strategy is not None:
+        res = self.results[0:n] - base_strategy.results[0:n]
       return res

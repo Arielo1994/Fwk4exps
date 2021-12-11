@@ -55,7 +55,7 @@ class TraceBackInfo(object):
         return return_str
 
 class SpeculativeMonitor:
-  def __init__(self, cpu_count, experimental_design, pifile, strategies_file=None, counters_file=None):
+  def __init__(self, cpu_count, experimental_design, pifile, strategies_file=None, counters_file=None, with_base_strategy=True):
       self.counters=[]
       Strategy.strategy_dict=dict()
 
@@ -66,6 +66,7 @@ class SpeculativeMonitor:
       self.experimental_design = experimental_design
       self.pifile = pifile
       self.base_strategy = None
+      self.with_base_strategy = with_base_strategy
 
       # read data
       print("reading file of instances")
@@ -75,9 +76,10 @@ class SpeculativeMonitor:
       if strategies_file is not None and counters_file is not None:
         Strategy.strategy_dict=load(strategies_file)
         self.counters=load(counters_file)
-        for algo_str in Strategy.strategy_dict:
-            self.base_strategy = Strategy.strategy_dict[algo_str]
-            break
+        if with_base_strategy:
+          for algo_str in Strategy.strategy_dict:
+              self.base_strategy = Strategy.strategy_dict[algo_str]
+              break
 
   def _execute(self, alg):
       """ dado un algoritmo ejecuta cierto numero de
@@ -244,7 +246,7 @@ class SpeculativeMonitor:
             if self.strategies[0].results is None: self._execute(self.strategies[0])
             if self.strategies[1].results is None: self._execute(self.strategies[1])
             executions = True
-            if self.base_strategy == None:
+            if self.with_base_strategy and self.base_strategy == None:
               self.base_strategy = self.strategies[0]
               print("base strategy:", self.base_strategy.params)
           
@@ -268,7 +270,9 @@ class SpeculativeMonitor:
         if alg.results is not None and alg.needs_to_be_sampled:
           print("Sampling",alg.params)
           n = alg.n_runs
-          res = alg.results[0:n] - self.base_strategy.results[0:n]
+          if self.base_strategy is not None:
+            res = alg.results[0:n] - self.base_strategy.results[0:n]
+          else: res=self.base_strategy.results[0:n]
 
           alg.est_means = SpeculativeMonitor.sample_means(res, len(self.instances)-len(res))
           alg.needs_to_be_sampled=False
@@ -290,7 +294,7 @@ class SpeculativeMonitor:
             print("selected strategy:",strategy.params, diff)
             self._execute(strategy)
 
-            if self.base_strategy.run_instances() <  strategy.run_instances():
+            if  self.base_strategy is not None and self.base_strategy.run_instances() <  strategy.run_instances():
                 self._execute(self.base_strategy)
 
             total_runs=0

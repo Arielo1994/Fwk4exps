@@ -22,7 +22,7 @@ def experimentalDesign():
 
 
 if __name__ ==  '__main__':
-    f4e = SpeculativeMonitor(4, experimentalDesign, 'instances.txt')
+    f4e = SpeculativeMonitor(4, experimentalDesign, 'instances.txt', with_base_strategy=False)
 
     total=0
     for str_name in Strategy.strategy_dict:
