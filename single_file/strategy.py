@@ -55,5 +55,5 @@ class Strategy:
       n = self.run_instances()
       res = self.results[0:n]
       if base_strategy is not None:
-        res = self.results[0:n] - base_strategy.results[0:n]
+        res -= base_strategy.results[0:n]
       return res

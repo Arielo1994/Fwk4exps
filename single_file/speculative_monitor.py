@@ -270,9 +270,9 @@ class SpeculativeMonitor:
         if alg.results is not None and alg.needs_to_be_sampled:
           print("Sampling",alg.params)
           n = alg.n_runs
+          res=alg.results[0:n]
           if self.base_strategy is not None:
-            res = alg.results[0:n] - self.base_strategy.results[0:n]
-          else: res=self.base_strategy.results[0:n]
+            res -= self.base_strategy.results[0:n]
 
           alg.est_means = SpeculativeMonitor.sample_means(res, len(self.instances)-len(res))
           alg.needs_to_be_sampled=False
