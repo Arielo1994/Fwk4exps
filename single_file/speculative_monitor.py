@@ -329,7 +329,7 @@ class SpeculativeMonitor:
         # with suppress_stdout:
         with pm.Model():
             mu = pm.Normal('mu', np.mean(data), 1)
-            sigma = pm.Uniform('sigma', lower=0.001, upper=5)
+            sigma = pm.Uniform('sigma', lower=0.001, upper=10)
 
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
@@ -337,7 +337,7 @@ class SpeculativeMonitor:
             #trace = pm.sample(250, step, cores=4, progressbar=False, tune=500)
 
             step = pm.NUTS() # Hamiltonian MCMC with No U-Turn Sampler
-            trace = pm.sample(250, step,  tune=500, cores=4, random_seed=123, progressbar=False, )
+            trace = pm.sample(250, step,  tune=1000, cores=8, random_seed=123, progressbar=False, )
 
             for t in trace: 
                 __sum = np.random.normal(c * t["mu"], np.sqrt(c) * t["sigma"])
