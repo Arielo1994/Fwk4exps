@@ -18,6 +18,17 @@ for str_name in Strategy.strategy_dict:
     print(algo.params, np.mean(algo.results), np.std(algo.results), algo.n_runs )
 print (total)
 
+for str_name in Strategy.strategy_dict:
+  algo=Strategy.strategy_dict[str_name]
+  print(algo.params, np.mean(algo.results[0:10]))
+
+for c in f4e.counters:
+  for str_name in Strategy.strategy_dict:
+    algo=Strategy.strategy_dict[str_name]
+    if algo.params == c[1]:
+      print(algo.params, np.mean(algo.results[0:c[4]]))
+      break
+
 for c in f4e.counters:
   print(c[0])
 

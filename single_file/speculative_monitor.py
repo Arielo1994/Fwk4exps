@@ -253,6 +253,7 @@ class SpeculativeMonitor:
 
       done = True
       for state, S1, S2 in self.tree_descent_path:
+        if S1 is None: break
         if S1.n_runs < len(self.instances) or S2.n_runs < len(self.instances):
             done = False
             break
