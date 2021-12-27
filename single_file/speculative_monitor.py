@@ -191,13 +191,13 @@ class SpeculativeMonitor:
             if alg_base in evaluated: continue
             if alg_base.n_runs == len(self.instances): continue
             
-            self.simul_mean[alg_base] = np.partition(alg_base.est_means,-10)[-10] #np.max(alg_base.est_means)  10/250
+            self.simul_mean[alg_base] = np.partition(alg_base.est_means,-5)[-5] #np.max(alg_base.est_means)  10/250
             self._simulations(n, alg_base=alg_base)
             opt_counter = copy.deepcopy(self.state_counter)
             opt_a=[opt_counter[s][0] if s in opt_counter else 0 for s,_,_ in self.tree_descent_path]
 
 
-            self.simul_mean[alg_base] = np.partition(alg_base.est_means,9)[9] #np.min(alg_base.est_means)
+            self.simul_mean[alg_base] = np.partition(alg_base.est_means,4)[4] #np.min(alg_base.est_means)
             self._simulations(n, alg_base=alg_base)
             pes_a=[self.state_counter[s][0]  if s in self.state_counter else 0  for s,_,_ in self.tree_descent_path]
 
@@ -290,7 +290,7 @@ class SpeculativeMonitor:
             if strategy==None: break
             
             print([(S1.n_runs, S2.n_runs) for state, S1, S2 in self.tree_descent_path[:-1]])
-            print([np.partition(S1.est_means,-10)[-10]-np.partition(S1.est_means,9)[9] for state, S1, S2 in self.tree_descent_path[:-1]])
+            print([np.partition(S1.est_means,-5)[-5]-np.partition(S1.est_means,4)[4] for state, S1, S2 in self.tree_descent_path[:-1]])
 
             print("selected strategy:",strategy.params, diff)
             self._execute(strategy)
