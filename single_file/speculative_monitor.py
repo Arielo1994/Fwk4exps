@@ -330,7 +330,7 @@ class SpeculativeMonitor:
         # with suppress_stdout:
         with pm.Model():
             mu = pm.Normal('mu', np.mean(data), 1)
-            sigma = pm.Uniform('sigma', lower=0.001, upper=10)
+            sigma = pm.Uniform('sigma', lower=0.001, upper=20)
 
             returns = pm.Normal('returns', mu=mu, sd=sigma, observed=data)
 
