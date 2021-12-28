@@ -4,6 +4,8 @@ from speculative_monitor import SpeculativeMonitor
 import itertools
 import sys
 sd = sys.argv[1]
+discard_extreme_samples = int(sys.argv[2])
+cut_impact = float(sys.argv[3])
 
 def experimentalDesign():
     base_params = {"x": -1.0, "y": -1.0}
@@ -22,7 +24,7 @@ def experimentalDesign():
 
 
 if __name__ ==  '__main__':
-    f4e = SpeculativeMonitor(10, experimentalDesign, 'instances.txt', with_base_strategy=False)
+    f4e = SpeculativeMonitor(10, experimentalDesign, 'instances.txt', with_base_strategy=False, discard_extreme=discard_extreme_samples, cut_impact=cut_impact)
 
     total=0
     for str_name in Strategy.strategy_dict:
@@ -33,5 +35,5 @@ if __name__ ==  '__main__':
     print (total)
     len(f4e.counters)
 
-    f4e.speculative_execution(strategies_file="fd-strategies-"+sd+".dat", counters_file="fd-counters-"+sd+".dat")
+    f4e.speculative_execution(strategies_file="fd-strategies-"+sd+"-"+sys.argv[2]+"-"+sys.argv[3]+".dat", counters_file="fd-counters-"+sys.argv[2]+"-"+sys.argv[3]+".dat")
 

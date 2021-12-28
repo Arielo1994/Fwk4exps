@@ -54,8 +54,10 @@ class TraceBackInfo(object):
 
         return return_str
 
+#discard_extreme: (simulation) number of samples that are discarded when the optimistic or pessimistic mean is computed for each strategy
+#cut_impact: minimo impacto que debe tener una estrategia para ser seleccionada como volatile strategy sin importar impacto de estrategias siguientes
 class SpeculativeMonitor:
-  def __init__(self, cpu_count, experimental_design, pifile, strategies_file=None, counters_file=None, with_base_strategy=True):
+  def __init__(self, cpu_count, experimental_design, pifile, strategies_file=None, counters_file=None, with_base_strategy=True, discard_extreme=4, cut_impact=0.5):
       self.counters=[]
       Strategy.strategy_dict=dict()
 
@@ -67,6 +69,8 @@ class SpeculativeMonitor:
       self.pifile = pifile
       self.base_strategy = None
       self.with_base_strategy = with_base_strategy
+      self.discard_extreme=discard_extreme
+      self.cut_impact=cut_impact
 
       # read data
       print("reading file of instances")
@@ -191,13 +195,14 @@ class SpeculativeMonitor:
             if alg_base in evaluated: continue
             if alg_base.n_runs == len(self.instances): continue
             
-            self.simul_mean[alg_base] = np.partition(alg_base.est_means,-5)[-5] #np.max(alg_base.est_means)  10/250
+
+            self.simul_mean[alg_base] = np.partition(alg_base.est_means,-self.discard_extreme-1)[-self.discard_extreme-1] #np.max(alg_base.est_means)  10/250
             self._simulations(n, alg_base=alg_base)
             opt_counter = copy.deepcopy(self.state_counter)
             opt_a=[opt_counter[s][0] if s in opt_counter else 0 for s,_,_ in self.tree_descent_path]
 
 
-            self.simul_mean[alg_base] = np.partition(alg_base.est_means,4)[4] #np.min(alg_base.est_means)
+            self.simul_mean[alg_base] = np.partition(alg_base.est_means,self.discard_extreme)[self.discard_extreme] #np.min(alg_base.est_means)
             self._simulations(n, alg_base=alg_base)
             pes_a=[self.state_counter[s][0]  if s in self.state_counter else 0  for s,_,_ in self.tree_descent_path]
 
@@ -215,9 +220,9 @@ class SpeculativeMonitor:
             
             evaluated.add(alg_base)
 
-            if max_impact > 0.5: break
+            if max_impact > self.cut_impact: break
 
-        if max_impact > 0.5: break
+        if max_impact > self.cut_impact: break
         
 
     return volatile_strategy, max_impact, [mid_counter[s][0] if s in mid_counter else 0 for s,_,_ in self.tree_descent_path ]
